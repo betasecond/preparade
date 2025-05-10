@@ -14,84 +14,160 @@
       ></textarea>
     </div>
 
-    <div v-if="copilotFeedback.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
+    <div v-if="isLoading" class="mt-4 text-center">
+      <div class="inline-block animate-pulse-fast rounded-full bg-indigo-400 h-6 w-6"></div>
+      <p class="text-sm text-slate-500 mt-1">Copilot 正在分析...</p>
+    </div>
+
+    <div v-else-if="assistResponse && assistResponse.suggestions && assistResponse.suggestions.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
       <h4 class="text-md font-semibold text-amber-800 mb-2">Copilot 实时反馈:</h4>
       <ul class="list-disc list-inside space-y-1 text-sm">
-        <li v-for="(feedback, index) in copilotFeedback" :key="index" :class="getFeedbackClass(feedback.type)">
-          <strong class="font-medium">{{ feedback.type.toUpperCase() }}:</strong> {{ feedback.message }}
+        <li v-for="(suggestion, index) in assistResponse.suggestions" :key="index" :class="getSuggestionClass(suggestion.type)">
+          <strong class="font-medium">{{ getSuggestionTypeLabel(suggestion.type) }}:</strong> {{ suggestion.content }}
         </li>
       </ul>
+      
+      <div v-if="assistResponse.complianceAnalysis && assistResponse.complianceAnalysis.hasIssues" class="mt-2 border-t border-amber-200 pt-2">
+        <h5 class="text-sm font-semibold text-red-700">合规性问题:</h5>
+        <ul class="list-disc list-inside text-sm">
+          <li v-for="(issue, index) in assistResponse.complianceAnalysis.issues" :key="index" class="text-red-600">
+            {{ issue.description }} <span v-if="issue.suggestion" class="text-slate-600">(建议: {{ issue.suggestion }})</span>
+          </li>
+        </ul>
+      </div>
     </div>
-     <div v-else-if="agentDraft.length > 5" class="mt-4 p-3 border border-green-300 bg-green-50 rounded-md text-sm text-green-700">
+    <div v-else-if="agentDraft.length > 5 && !errorMessage" class="mt-4 p-3 border border-green-300 bg-green-50 rounded-md text-sm text-green-700">
       <p><strong class="font-medium">Copilot:</strong> 内容初步看起来不错！</p>
+    </div>
+
+    <div v-if="errorMessage" class="mt-4 p-3 border border-red-300 bg-red-50 rounded-md text-sm text-red-700">
+      {{ errorMessage }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { AgentAssistServiceImpl, AssistRequest, type AssistResponse } from '../services/agentAssist.service';
 
-interface Feedback {
-  type: 'info' | 'warning' | 'suggestion' | 'compliance';
-  message: string;
-}
-
+// 状态变量
 const agentDraft = ref('');
-const copilotFeedback = ref<Feedback[]>([]);
+const isLoading = ref(false);
+const assistResponse = ref<AssistResponse | null>(null);
+const errorMessage = ref('');
+const debounceTimeout = ref<number | null>(null);
 
-const rules = [
-  {
-    condition: (text: string) => !text.toLowerCase().includes('您好') && !text.toLowerCase().includes('你好') && text.length > 3,
-    feedback: { type: 'compliance', message: '提示：回复开头建议使用标准问候语，如"您好"。' } as Feedback,
-  },
-  {
-    condition: (text: string) => text.toLowerCase().includes('不知道') || text.toLowerCase().includes('不清楚'),
-    feedback: { type: 'warning', message: '注意：避免使用"不知道"、"不清楚"等消极词汇，尝试提供可行的帮助或查询。' } as Feedback,
-  },
-  {
-    condition: (text: string) => text.length > 10 && !text.includes('订单号') && (text.includes('订单') || text.includes('物流')),
-    feedback: { type: 'suggestion', message: '建议：如果涉及订单问题，可以主动询问客户的订单号以便快速查询。' } as Feedback,
-  },
-  {
-    condition: (text: string) => text.length > 15 && !text.includes('感谢') && !text.includes('谢谢'),
-    feedback: { type: 'suggestion', message: '建议：在回复结尾可以说声"感谢您的理解与支持"等礼貌用语。' } as Feedback,
-  },
-  {
-    condition: (text: string) => text.toLowerCase().includes('垃圾') || text.toLowerCase().includes('废物'),
-    feedback: { type: 'warning', message: '警告：检测到不当言辞，请注意专业沟通。' } as Feedback,
-  }
-];
+// 实例化服务
+const assistService = new AgentAssistServiceImpl();
 
+// 模拟的会话上下文
+const sessionContext = {
+  sessionId: 'demo-session-' + Date.now(),
+  agentId: 'agent-123',
+  history: [
+    {
+      id: 'msg-1',
+      sender: 'customer',
+      content: '你们的产品什么时候能发货？我等了三天了还没收到',
+      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+      type: 'text'
+    },
+    {
+      id: 'msg-2',
+      sender: 'agent',
+      content: '您好，请问您的订单号是多少呢？我帮您查询',
+      timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
+      type: 'text'
+    },
+    {
+      id: 'msg-3',
+      sender: 'customer',
+      content: '订单号是1234567890',
+      timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
+      type: 'text'
+    }
+  ]
+};
+
+// 带防抖的分析函数
 const analyzeAgentInput = () => {
-  const currentFeedback: Feedback[] = [];
-  const text = agentDraft.value;
+  // 清除之前的计时器
+  if (debounceTimeout.value !== null) {
+    clearTimeout(debounceTimeout.value);
+  }
 
-  if (!text.trim()) {
-    copilotFeedback.value = [];
+  // 文本为空时重置
+  if (!agentDraft.value.trim()) {
+    assistResponse.value = null;
+    errorMessage.value = '';
     return;
   }
 
-  rules.forEach(rule => {
-    if (rule.condition(text)) {
-      currentFeedback.push(rule.feedback);
+  // 设置防抖延迟
+  debounceTimeout.value = setTimeout(async () => {
+    isLoading.value = true;
+    errorMessage.value = '';
+
+    try {
+      // 准备请求参数
+      const request: AssistRequest = {
+        context: {
+          sessionId: sessionContext.sessionId,
+          agentId: sessionContext.agentId,
+          history: sessionContext.history
+        },
+        currentDraft: agentDraft.value,
+        assistType: 'auto'
+      };
+
+      // 调用API
+      const response = await assistService.getRealtimeAssistance(request);
+      
+      // 处理响应
+      if (response.code === 200) {
+        assistResponse.value = response.data;
+      } else {
+        errorMessage.value = response.message || '请求失败';
+        assistResponse.value = null;
+      }
+    } catch (error) {
+      console.error('获取实时辅助建议失败:', error);
+      errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试。';
+      assistResponse.value = null;
+    } finally {
+      isLoading.value = false;
     }
-  });
-  copilotFeedback.value = currentFeedback;
+  }, 800); // 800ms防抖延迟
 };
 
-// Watch for changes in agentDraft to trigger analysis
-// Using watch for more explicit control, or can rely purely on @input
+// 监听输入变化
 watch(agentDraft, analyzeAgentInput);
 
+// 格式化建议类型
+const getSuggestionTypeLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    'completion': '补全',
+    'sentiment': '情感',
+    'compliance': '合规',
+    'information': '信息',
+    'greeting': '问候',
+    'closing': '结束语'
+  };
+  
+  return labels[type] || type.toUpperCase();
+};
 
-const getFeedbackClass = (type: Feedback['type']): string => {
+// 获取CSS类
+const getSuggestionClass = (type: string): string => {
   switch (type) {
-    case 'info': return 'text-blue-700';
-    case 'warning': return 'text-red-700';
-    case 'suggestion': return 'text-yellow-700';
-    case 'compliance': return 'text-purple-700';
+    case 'information': return 'text-blue-700';
+    case 'compliance': return 'text-red-700';
+    case 'sentiment': return 'text-purple-700';
+    case 'completion': return 'text-green-700';
+    case 'greeting':
+    case 'closing':
+      return 'text-yellow-700';
     default: return 'text-slate-700';
   }
 };
-
 </script>

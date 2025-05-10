@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
-import { reviewQueueData, type ReviewItem } from '../reportData';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { ReviewQueueServiceImpl, type ReviewQueueItem } from '../services/reviewQueue.service';
 
 // 初始化状态
-const reviewItems = ref<ReviewItem[]>(reviewQueueData);
+const reviewItems = ref<ReviewQueueItem[]>([]);
+const isLoading = ref(false);
+const errorMessage = ref('');
 const selectedItemId = ref<string | null>(null);
 const filterStatus = ref<string>('all');
 const filterSource = ref<string>('all');
 const sortBy = ref<string>('latest');
 
 // 支持的标签选项
-const availableTags = ['会员', '积分规则', '兑换', '支付问题', '退款', '紧急', '售后', '产品', '物流', '价格'];
+const availableTags = ref<string[]>([]);
+
+// 实例化服务
+const reviewQueueService = new ReviewQueueServiceImpl();
 
 // 编辑表单状态
 const editForm = reactive({
@@ -20,34 +25,92 @@ const editForm = reactive({
   keywords: [] as string[],
   expirationDate: '',
   newTag: '',
-  newKeyword: ''
+  newKeyword: '',
+  comment: ''
 });
 
-// 处理筛选和排序
-const filteredItems = computed(() => {
-  return reviewItems.value
-    .filter(item => {
-      // 筛选状态
-      if (filterStatus.value !== 'all' && item.status !== filterStatus.value) {
-        return false;
-      }
-      
-      // 筛选来源
-      if (filterSource.value !== 'all' && !item.source.includes(filterSource.value)) {
-        return false;
-      }
-      
-      return true;
-    })
-    .sort((a, b) => {
-      // 排序
-      if (sortBy.value === 'latest') {
-        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-      } else {
-        return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-      }
-    });
+// 审核队列统计数据
+const queueStats = ref({
+  totalItems: 0,
+  pendingCount: 0,
+  approvedCount: 0,
+  rejectedCount: 0,
+  needsInfoCount: 0
 });
+
+// 初始化加载数据
+onMounted(async () => {
+  try {
+    await loadQueueData();
+    await loadTags();
+    await loadStats();
+  } catch (error) {
+    console.error('初始化加载失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '无法加载数据，请稍后再试';
+  }
+});
+
+// 加载审核队列数据
+const loadQueueData = async () => {
+  isLoading.value = true;
+  errorMessage.value = '';
+  
+  try {
+    const params = {
+      page: 1,
+      pageSize: 50,
+      status: filterStatus.value !== 'all' ? filterStatus.value : undefined,
+      source: filterSource.value !== 'all' ? filterSource.value : undefined,
+      sortBy: sortBy.value === 'latest' ? 'timestamp' : undefined,
+      sortOrder: sortBy.value === 'latest' ? 'desc' : 'asc'
+    };
+
+    const response = await reviewQueueService.getReviewQueueItems(params);
+    
+    if (response.code === 200) {
+      reviewItems.value = response.data.items;
+    } else {
+      errorMessage.value = response.message || '获取审核队列数据失败';
+    }
+  } catch (error) {
+    console.error('加载审核队列数据失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 加载审核标签
+const loadTags = async () => {
+  try {
+    const response = await reviewQueueService.getReviewTags();
+    if (response.code === 200) {
+      availableTags.value = response.data;
+    }
+  } catch (error) {
+    console.error('加载标签失败:', error);
+  }
+};
+
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const response = await reviewQueueService.getReviewStats();
+    if (response.code === 200) {
+      queueStats.value = response.data;
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error);
+  }
+};
+
+// 处理筛选和排序变化
+const handleFilterChange = async () => {
+  await loadQueueData();
+};
+
+// 监听筛选条件变化
+watch([filterStatus, filterSource, sortBy], handleFilterChange);
 
 // 获取选中的项目
 const selectedItem = computed(() => {
@@ -56,18 +119,28 @@ const selectedItem = computed(() => {
 });
 
 // 选择一个项目进行审核
-const selectItem = (id: string) => {
+const selectItem = async (id: string) => {
   selectedItemId.value = id;
-  const item = reviewItems.value.find(item => item.id === id);
   
-  if (item) {
-    editForm.standardQuestion = item.standardQuestion || item.originalQuery;
-    editForm.standardAnswer = item.suggestedAnswer || item.currentAnswer || '';
-    editForm.tags = item.metadata?.tags || [];
-    editForm.keywords = item.metadata?.keywords || [];
-    editForm.expirationDate = item.metadata?.expirationDate || '';
-    editForm.newTag = '';
-    editForm.newKeyword = '';
+  try {
+    // 获取详细信息
+    const response = await reviewQueueService.getReviewItemDetail(id);
+    
+    if (response.code === 200) {
+      const item = response.data;
+      
+      editForm.standardQuestion = item.standardQuestion || item.originalQuery;
+      editForm.standardAnswer = item.suggestedAnswer || item.currentAnswer || '';
+      editForm.tags = item.metadata?.tags || [];
+      editForm.keywords = item.metadata?.keywords || [];
+      editForm.expirationDate = item.metadata?.expirationDate || '';
+      editForm.comment = '';
+    } else {
+      errorMessage.value = response.message || '获取审核项详情失败';
+    }
+  } catch (error) {
+    console.error('获取审核项详情失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
   }
 };
 
@@ -104,49 +177,98 @@ const removeKeyword = (keyword: string) => {
 };
 
 // 审核操作
-const approveItem = (saveChanges: boolean = false) => {
+const approveItem = async (saveChanges: boolean = false) => {
   if (!selectedItemId.value) return;
+  isLoading.value = true;
+  errorMessage.value = '';
   
-  const itemIndex = reviewItems.value.findIndex(item => item.id === selectedItemId.value);
-  if (itemIndex > -1) {
-    if (saveChanges) {
-      reviewItems.value[itemIndex] = {
-        ...reviewItems.value[itemIndex],
-        standardQuestion: editForm.standardQuestion,
-        suggestedAnswer: editForm.standardAnswer,
-        metadata: {
-          tags: editForm.tags,
-          keywords: editForm.keywords,
-          expirationDate: editForm.expirationDate
-        },
-        status: 'approved'
-      };
-    } else {
-      reviewItems.value[itemIndex].status = 'approved';
-    }
+  try {
+    const request = {
+      itemId: selectedItemId.value,
+      decision: 'approve',
+      standardQuestion: saveChanges ? editForm.standardQuestion : undefined,
+      suggestedAnswer: saveChanges ? editForm.standardAnswer : undefined,
+      metadata: saveChanges ? {
+        tags: editForm.tags,
+        keywords: editForm.keywords,
+        expirationDate: editForm.expirationDate
+      } : undefined,
+      comment: editForm.comment
+    };
     
-    // 模拟API调用成功后的状态更新
-    selectedItemId.value = null;
+    const response = await reviewQueueService.submitReviewDecision(request);
+    
+    if (response.code === 200) {
+      // 更新本地状态
+      await loadQueueData();
+      await loadStats();
+      selectedItemId.value = null;
+    } else {
+      errorMessage.value = response.message || '操作失败';
+    }
+  } catch (error) {
+    console.error('审批操作失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const rejectItem = () => {
+const rejectItem = async () => {
   if (!selectedItemId.value) return;
+  isLoading.value = true;
+  errorMessage.value = '';
   
-  const itemIndex = reviewItems.value.findIndex(item => item.id === selectedItemId.value);
-  if (itemIndex > -1) {
-    reviewItems.value[itemIndex].status = 'rejected';
-    selectedItemId.value = null;
+  try {
+    const request = {
+      itemId: selectedItemId.value,
+      decision: 'reject',
+      comment: editForm.comment
+    };
+    
+    const response = await reviewQueueService.submitReviewDecision(request);
+    
+    if (response.code === 200) {
+      await loadQueueData();
+      await loadStats();
+      selectedItemId.value = null;
+    } else {
+      errorMessage.value = response.message || '操作失败';
+    }
+  } catch (error) {
+    console.error('拒绝操作失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const needMoreInfo = () => {
+const needMoreInfo = async () => {
   if (!selectedItemId.value) return;
+  isLoading.value = true;
+  errorMessage.value = '';
   
-  const itemIndex = reviewItems.value.findIndex(item => item.id === selectedItemId.value);
-  if (itemIndex > -1) {
-    reviewItems.value[itemIndex].status = 'needsInfo';
-    selectedItemId.value = null;
+  try {
+    const request = {
+      itemId: selectedItemId.value,
+      decision: 'needsInfo',
+      comment: editForm.comment
+    };
+    
+    const response = await reviewQueueService.submitReviewDecision(request);
+    
+    if (response.code === 200) {
+      await loadQueueData();
+      await loadStats();
+      selectedItemId.value = null;
+    } else {
+      errorMessage.value = response.message || '操作失败';
+    }
+  } catch (error) {
+    console.error('标记需要更多信息失败:', error);
+    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -154,16 +276,14 @@ const needMoreInfo = () => {
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   if (isNaN(date.getTime())) {
-    return dateString; // 如果不是有效日期，直接返回原字符串
+    return dateString;
   }
   
-  // 今天的日期仅显示时间
   const today = new Date().toDateString();
   if (date.toDateString() === today) {
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
   }
   
-  // 其他日期显示日期和时间
   return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
 
@@ -198,6 +318,30 @@ const getStatusText = (status: string) => {
 
 <template>
   <div class="review-queue-container">
+    <!-- 统计信息条 -->
+    <div class="stats-bar bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow mb-4 p-3 grid grid-cols-5 gap-3 text-center">
+      <div class="stat-item bg-white/10 rounded p-2">
+        <div class="text-xs font-medium text-white/80">总项目</div>
+        <div class="text-xl font-bold text-white">{{ queueStats.totalItems }}</div>
+      </div>
+      <div class="stat-item bg-white/10 rounded p-2">
+        <div class="text-xs font-medium text-white/80">待处理</div>
+        <div class="text-xl font-bold text-white">{{ queueStats.pendingCount }}</div>
+      </div>
+      <div class="stat-item bg-white/10 rounded p-2">
+        <div class="text-xs font-medium text-white/80">已批准</div>
+        <div class="text-xl font-bold text-white">{{ queueStats.approvedCount }}</div>
+      </div>
+      <div class="stat-item bg-white/10 rounded p-2">
+        <div class="text-xs font-medium text-white/80">已拒绝</div>
+        <div class="text-xl font-bold text-white">{{ queueStats.rejectedCount }}</div>
+      </div>
+      <div class="stat-item bg-white/10 rounded p-2">
+        <div class="text-xs font-medium text-white/80">需补充</div>
+        <div class="text-xl font-bold text-white">{{ queueStats.needsInfoCount }}</div>
+      </div>
+    </div>
+    
     <!-- 过滤和排序控制 -->
     <div class="filter-controls bg-white p-4 rounded-lg shadow mb-4 flex flex-wrap gap-4">
       <div class="flex items-center">
@@ -223,9 +367,9 @@ const getStatusText = (status: string) => {
           class="border border-gray-300 rounded-md text-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="all">全部</option>
-          <option value="用户提问">用户提问</option>
-          <option value="用户反馈">用户反馈</option>
-          <option value="低置信度">低置信度</option>
+          <option value="用户提问-系统未答出">用户提问</option>
+          <option value="用户反馈-答案差评">用户反馈</option>
+          <option value="低置信度回答">低置信度</option>
         </select>
       </div>
       
@@ -242,7 +386,18 @@ const getStatusText = (status: string) => {
       </div>
     </div>
     
-    <div class="review-queue-content flex gap-6">
+    <!-- 加载中状态 -->
+    <div v-if="isLoading && !selectedItemId" class="bg-white p-8 rounded-lg shadow mb-4 text-center">
+      <div class="inline-block animate-pulse-fast rounded-full bg-indigo-400 h-8 w-8"></div>
+      <p class="text-sm text-slate-500 mt-2">数据加载中...</p>
+    </div>
+    
+    <!-- 错误信息显示 -->
+    <div v-if="errorMessage" class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4 text-red-800">
+      {{ errorMessage }}
+    </div>
+    
+    <div class="review-queue-content flex gap-6" v-if="!isLoading || selectedItemId">
       <!-- 列表侧边栏 -->
       <div class="review-list w-2/5 bg-white rounded-lg shadow overflow-hidden">
         <div class="p-3 bg-indigo-50 border-b border-indigo-100">
@@ -250,7 +405,7 @@ const getStatusText = (status: string) => {
         </div>
         <div class="overflow-y-auto max-h-[600px]">
           <div 
-            v-for="item in filteredItems" 
+            v-for="item in reviewItems" 
             :key="item.id" 
             @click="selectItem(item.id)"
             class="review-item p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -269,7 +424,7 @@ const getStatusText = (status: string) => {
             </div>
           </div>
           
-          <div v-if="filteredItems.length === 0" class="p-6 text-center text-gray-500">
+          <div v-if="reviewItems.length === 0" class="p-6 text-center text-gray-500">
             暂无匹配的审核项
           </div>
         </div>
@@ -396,6 +551,16 @@ const getStatusText = (status: string) => {
                 class="border border-gray-300 rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
+            
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">审核备注</label>
+              <textarea
+                v-model="editForm.comment"
+                rows="2"
+                class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="添加审核备注（可选）"
+              ></textarea>
+            </div>
           </div>
           
           <div class="action-buttons flex space-x-3">
@@ -403,6 +568,7 @@ const getStatusText = (status: string) => {
               @click="approveItem(false)"
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex-1"
               title="确认当前编辑的'标准问题'和'标准答案'无误，可以加入知识库"
+              :disabled="isLoading"
             >
               批准
             </button>
@@ -410,6 +576,7 @@ const getStatusText = (status: string) => {
               @click="approveItem(true)"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex-1"
               title="保存当前修改并批准加入知识库"
+              :disabled="isLoading"
             >
               保存并批准
             </button>
@@ -417,6 +584,7 @@ const getStatusText = (status: string) => {
               @click="rejectItem"
               class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex-1"
               title="认为此条目不适合加入知识库，或暂时不处理"
+              :disabled="isLoading"
             >
               拒绝/忽略
             </button>
@@ -424,6 +592,7 @@ const getStatusText = (status: string) => {
               @click="needMoreInfo"
               class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex-1"
               title="如果审核员无法独立判断，可以标记需要更多信息"
+              :disabled="isLoading"
             >
               需要更多信息
             </button>
@@ -459,5 +628,25 @@ const getStatusText = (status: string) => {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;  
   overflow: hidden;
+}
+
+/* 禁用按钮样式 */
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 加载动画 */
+.animate-pulse-fast {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
 }
 </style>

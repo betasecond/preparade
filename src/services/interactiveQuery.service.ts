@@ -1,4 +1,4 @@
-import { ApiResponse, PaginatedResponse, PaginationParams } from './api.types';
+import type { ApiResponse, PaginatedResponse, PaginationParams } from './api.types';
 import { get, post } from './http-client';
 
 /**

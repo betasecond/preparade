@@ -1,10 +1,11 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
 /**
  * 环境配置
  */
 const API_ENVIRONMENTS = {
-  development: 'http://localhost:3000/api',
+  development: 'http://localhost:8000/api',
   staging: 'https://staging-api.preparade.com/api',
   production: 'https://api.preparade.com/api'
 };

@@ -1,4 +1,4 @@
-import { ApiResponse } from './api.types';
+import   type { ApiResponse } from './api.types';
 import { get, post } from './http-client';
 
 /**

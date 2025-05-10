@@ -1,5 +1,5 @@
-import { ApiResponse, PaginatedResponse, PaginationParams, FilterParams } from './api.types';
-import { ReviewItem } from '../reportData';
+import type {ApiResponse, FilterParams, PaginatedResponse, PaginationParams} from './api.types';
+import  type { ReviewItem } from '../reportData';
 import { get, post } from './http-client';
 
 /**
