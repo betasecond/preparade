@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { reportData, type ReportSection } from './reportData';
 import InteractiveQueryDemo from './components/InteractiveQueryDemo.vue';
 import AgentAssistDemo from './components/AgentAssistDemo.vue';
+import ReviewQueueDemo from './components/ReviewQueueDemo.vue';
 
 const reportSections = ref<ReportSection[]>(reportData);
 const selectedSectionId = ref<string>(reportData[0]?.id || ''); 
@@ -72,6 +73,7 @@ const formatText = (text: string): string => {
           <div v-if="item.type === 'demo'" class="my-8 p-4 border border-indigo-200 rounded-lg bg-indigo-50 shadow-sm">
             <InteractiveQueryDemo v-if="item.demoComponent === 'InteractiveQueryDemo'" />
             <AgentAssistDemo v-if="item.demoComponent === 'AgentAssistDemo'" />
+            <ReviewQueueDemo v-if="item.demoComponent === 'ReviewQueueDemo'" />
           </div>
         </div>
       </div>
