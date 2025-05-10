@@ -17,10 +17,11 @@
 
 ## 功能演示
 
-本项目提供两个主要演示模块：
+本项目提供三个主要演示模块：
 
 1. **智能问答演示** - 展示 AI 如何分析客户问题并提供精准回复建议
 2. **客服辅助演示** - 展示 AI 如何为客服提供实时支持和信息
+3. **知识库审核队列** - 展示 AI 如何管理和改进知识库条目质量
 
 ## 快速开始
 
@@ -90,14 +91,21 @@ npm run preview
 │   ├── assets/            # 图片等资产文件
 │   ├── components/        # 可复用组件
 │   │   ├── InteractiveQueryDemo.vue  # 智能问答演示组件
-│   │   └── AgentAssistDemo.vue       # 客服辅助演示组件
+│   │   ├── AgentAssistDemo.vue       # 客服辅助演示组件
+│   │   └── ReviewQueueDemo.vue       # 审核队列演示组件 
+│   ├── services/          # 服务层
+│   │   ├── api.types.ts             # API通用类型定义
+│   │   ├── interactiveQuery.service.ts # 智能问答服务
+│   │   ├── agentAssist.service.ts    # 客服辅助服务
+│   │   └── reviewQueue.service.ts    # 审核队列服务
 │   ├── App.vue            # 主应用组件
 │   ├── main.ts            # 应用入口
 │   └── reportData.ts      # 演示数据
 ├── index.html             # HTML 模板
 ├── package.json           # 项目配置
 ├── tsconfig.json          # TypeScript 配置
-└── vite.config.ts         # Vite 配置
+├── vite.config.ts         # Vite 配置
+└── API_DOCUMENTATION.md   # API 接口文档
 ```
 
 ## 如何进行开发
@@ -105,6 +113,23 @@ npm run preview
 1. 在 `reportData.ts` 中添加或修改演示数据
 2. 修改 `components` 目录下的组件以更新演示功能
 3. 修改 `App.vue` 以更改整体布局或导航结构
+4. 开发后端API时参考 `API_DOCUMENTATION.md` 文档
+
+## 最新更新 (v0.0.5, 2025-05-10)
+
+### 服务层架构完善
+- 新增完整TypeScript服务层，包含三大模块：
+  - 智能问答服务 (`interactiveQuery.service.ts`)
+  - 客服辅助服务 (`agentAssist.service.ts`) 
+  - 知识库审核队列服务 (`reviewQueue.service.ts`)
+- 引入标准API响应格式和错误处理
+- 添加详细的JSDoc注释和类型声明
+- 实现了符合RESTful规范的API调用方法
+
+### API文档
+- 新增 `API_DOCUMENTATION.md` 提供完整的API参考
+- 包括请求格式、响应格式和参数说明
+- 便于前后端协作开发
 
 ## 未来规划
 
@@ -112,6 +137,8 @@ npm run preview
 - 情感分析与个性化响应
 - 预测性服务示例
 - 多渠道协同服务演示
+- 集成第三方身份验证
+- 添加用户和权限管理
 
 ## 了解更多
 
