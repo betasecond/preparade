@@ -15,7 +15,7 @@
     </div>
 
     <div v-if="copilotFeedback.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
-      <h4 class="text-md font-semibold text-amber-800 mb-2">Copilot 实时反馈:</h4>
+      <h4 class="text-md font-semibold text-amber-800 mb-2">AI 智能体客服实时反馈:</h4>
       <ul class="list-disc list-inside space-y-1 text-sm">
         <li v-for="(feedback, index) in copilotFeedback" :key="index" :class="getFeedbackClass(feedback.type)">
           <strong class="font-medium">{{ feedback.type.toUpperCase() }}:</strong> {{ feedback.message }}
@@ -23,7 +23,7 @@
       </ul>
     </div>
      <div v-else-if="agentDraft.length > 5" class="mt-4 p-3 border border-green-300 bg-green-50 rounded-md text-sm text-green-700">
-      <p><strong class="font-medium">Copilot:</strong> 内容初步看起来不错！</p>
+      <p><strong class="font-medium">AI 智能体客服:</strong> 内容初步看起来不错！</p>
     </div>
   </div>
 </template>
