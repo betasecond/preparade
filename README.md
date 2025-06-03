@@ -35,6 +35,7 @@
 ```bash
 git clone https://github.com/betasecond/preparade.git
 cd preparade
+git checkout 0.0.5a
 ```
 
 2. 安装依赖:
