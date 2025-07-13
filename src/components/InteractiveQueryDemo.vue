@@ -32,6 +32,7 @@
         <div class="mt-3 pt-3 border-t border-green-200 text-sm">
           <p><strong class="text-green-700">识别关键词:</strong> <span class="text-slate-600">{{ aiResponse.keywords }}</span></p>
           <p><strong class="text-green-700">匹配知识/案例:</strong> <span class="text-slate-600">{{ aiResponse.source }}</span></p>
+
         </div>
       </div>
     </div>
@@ -49,6 +50,7 @@ import type { ServiceQA } from '../reportData';
 const customerQuery = ref('');
 const isLoading = ref(false);
 const aiResponse = ref<{ title: string; content: string; keywords: string; source: string; } | null>(null);
+
 const errorMessage = ref('');
 const serviceQADatabase = ref<ServiceQA[]>([]);
 const FALLBACK_KEYWORDS = '家具, 质量, 服务';
@@ -115,6 +117,7 @@ const findBestMatch = (query: string): ServiceQA | null => {
 };
 
 const getAISuggestion = () => {
+
   if (!customerQuery.value.trim()) {
     errorMessage.value = "请输入您的问题后再咨询。";
     aiResponse.value = null; // 清除旧的回答
@@ -168,3 +171,4 @@ const getAISuggestion = () => {
   }
 }
 </style>
+

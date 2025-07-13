@@ -17,10 +17,11 @@
 
 ## 功能演示
 
-本项目提供两个主要演示模块：
+本项目提供三个主要演示模块：
 
 1. **智能问答演示** - 展示 AI 如何分析客户问题并提供精准回复建议
 2. **客服辅助演示** - 展示 AI 如何为客服提供实时支持和信息
+3. **知识库审核队列** - 展示 AI 如何管理和改进知识库条目质量
 
 ## 快速开始
 
@@ -166,6 +167,7 @@ npm run preview
 │   │   ├── InteractiveQueryDemo.vue  # 智能问答演示组件
 │   │   ├── ReviewQueueDemo.vue       # 质检队列演示组件
 │   │   └── AgentAssistDemo.vue       # 客服辅助演示组件
+
 │   ├── App.vue            # 主应用组件
 │   ├── main.ts            # 应用入口
 │   └── reportData.ts      # 共享的 TypeScript 类型定义
@@ -174,7 +176,8 @@ npm run preview
 ├── index.html             # HTML 模板
 ├── package.json           # 项目配置
 ├── tsconfig.json          # TypeScript 配置
-└── vite.config.ts         # Vite 配置
+├── vite.config.ts         # Vite 配置
+└── API_DOCUMENTATION.md   # API 接口文档
 ```
 
 ## 如何进行开发
@@ -186,12 +189,15 @@ npm run preview
 3. **更新前端组件**: 修改 `src/components/` 目录下的 Vue 组件以实现新的业务逻辑或 UI 界面。
 4. **调用 API**: 在 `src/api/index.ts` 中添加新的函数来调用 API，并在组件中使用这些函数获取或更新数据。
 
+
 ## 未来规划
 
 本项目计划进一步发展，添加更多智能客服功能演示，包括：
 - 情感分析与个性化响应
 - 预测性服务示例
 - 多渠道协同服务演示
+- 集成第三方身份验证
+- 添加用户和权限管理
 
 ## 了解更多
 
