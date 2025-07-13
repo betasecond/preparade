@@ -1,0 +1,49 @@
+# 示范组件集成模式
+
+在 `App.vue` 或其他父组件中，根据 `reportData.ts` 中的 `demoComponent` 字段动态渲染对应的演示组件。
+
+## 推荐方式：使用动态组件
+
+为了获得最佳的可扩展性和可维护性，推荐使用 Vue 的动态组件 `<component :is="...">`。
+
+1.  **在父组件的 `<script setup>` 中导入所有可能的演示组件：**
+
+    ```typescript
+    import InteractiveQueryDemo from './components/InteractiveQueryDemo.vue';
+    import AgentAssistDemo from './components/AgentAssistDemo.vue';
+    import ReviewQueueDemo from './components/ReviewQueueDemo.vue';
+
+    const demoComponents = {
+      InteractiveQueryDemo,
+      AgentAssistDemo,
+      ReviewQueueDemo,
+    };
+    ```
+
+2.  **在模板中使用 `<component>` 元素：**
+
+    ```html
+    <template>
+      <!-- reportContent 是 reportData 中的一个对象 -->
+      <div v-for="item in reportContent" :key="item.id">
+        <component 
+          v-if="item.demoComponent" 
+          :is="demoComponents[item.demoComponent]" 
+        />
+      </div>
+    </template>
+    ```
+
+## 替代方式：使用 `v-if`（适用于少量固定组件）
+
+如果项目中的演示组件数量很少且固定，也可以使用 `v-if` 指令。但请注意，当组件增多时，这种方式不易维护。
+
+```html
+<template>
+  <div v-for="item in reportContent" :key="item.id">
+    <InteractiveQueryDemo v-if="item.demoComponent === 'InteractiveQueryDemo'" />
+    <AgentAssistDemo v-if="item.demoComponent === 'AgentAssistDemo'" />
+    <ReviewQueueDemo v-if="item.demoComponent === 'ReviewQueueDemo'" />
+  </div>
+</template>
+```

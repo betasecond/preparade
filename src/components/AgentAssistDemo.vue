@@ -14,13 +14,9 @@
       ></textarea>
     </div>
 
-    <div v-if="isLoading" class="mt-4 text-center">
-      <div class="inline-block animate-pulse-fast rounded-full bg-indigo-400 h-6 w-6"></div>
-      <p class="text-sm text-slate-500 mt-1">Copilot 正在分析...</p>
-    </div>
+    <div v-if="copilotFeedback.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
+      <h4 class="text-md font-semibold text-amber-800 mb-2">AI 智能体客服实时反馈:</h4>
 
-    <div v-else-if="assistResponse && assistResponse.suggestions && assistResponse.suggestions.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
-      <h4 class="text-md font-semibold text-amber-800 mb-2">Copilot 实时反馈:</h4>
       <ul class="list-disc list-inside space-y-1 text-sm">
         <li v-for="(suggestion, index) in assistResponse.suggestions" :key="index" :class="getSuggestionClass(suggestion.type)">
           <strong class="font-medium">{{ getSuggestionTypeLabel(suggestion.type) }}:</strong> {{ suggestion.content }}
@@ -36,8 +32,9 @@
         </ul>
       </div>
     </div>
-    <div v-else-if="agentDraft.length > 5 && !errorMessage" class="mt-4 p-3 border border-green-300 bg-green-50 rounded-md text-sm text-green-700">
-      <p><strong class="font-medium">Copilot:</strong> 内容初步看起来不错！</p>
+     <div v-else-if="agentDraft.length > 5" class="mt-4 p-3 border border-green-300 bg-green-50 rounded-md text-sm text-green-700">
+      <p><strong class="font-medium">AI 智能体客服:</strong> 内容初步看起来不错！</p>
+
     </div>
 
     <div v-if="errorMessage" class="mt-4 p-3 border border-red-300 bg-red-50 rounded-md text-sm text-red-700">

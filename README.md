@@ -36,6 +36,7 @@
 ```bash
 git clone https://github.com/betasecond/preparade.git
 cd preparade
+git checkout 0.0.5a
 ```
 
 2. 安装依赖:
@@ -59,6 +60,18 @@ npm run dev
 http://localhost:5173/
 ```
 
+### 启动模拟 API 服务器
+
+为了使应用能够获取数据，请在项目根目录打开一个新的终端窗口，并运行以下命令来启动 `json-server` 模拟后端：
+
+```bash
+pnpm server
+# 或
+npm run server
+```
+
+此服务器将运行在 `http://localhost:3000`。
+
 ## 构建生产版本
 
 ```bash
@@ -81,6 +94,65 @@ npm run preview
 - TypeScript - 类型安全
 - Vite - 构建工具和开发服务器
 - TailwindCSS - UI 样式
+- Axios - HTTP 请求客户端
+- json-server - 模拟 REST API 服务器
+
+## API 参考
+
+本项目使用 `json-server` 模拟后端 API，数据源为根目录下的 `db.json` 文件。
+
+### 报告模块 (`/reports`)
+
+- **GET `/reports`**
+  - **描述**: 获取所有报告板块的数据。
+  - **响应示例**:
+    ```json
+    [
+      {
+        "id": "2024-q1-summary",
+        "title": "2024年Q1客服中心运营效率报告",
+        "reportContent": [
+          {
+            "id": "interactive-query",
+            "title": "智能问答机器人",
+            "description": "演示 AI 如何赋能一线客服，提供实时、精准的客户问题解答支持。",
+            "demoComponent": "InteractiveQueryDemo"
+          }
+        ]
+      }
+    ]
+    ```
+
+### 审核队列模块 (`/reviewQueue`)
+
+- **GET `/reviewQueue`**
+  - **描述**: 获取所有待审核的客服对话记录。
+- **GET `/reviewQueue/:id`**
+  - **描述**: 根据 ID 获取单个审核项。
+- **PATCH `/reviewQueue/:id`**
+  - **描述**: 更新审核项的状态（例如，将 `status` 更新为 `approved` 或 `rejected`）。
+  - **请求体示例**:
+    ```json
+    {
+      "status": "approved",
+      "reviewedBy": "张三"
+    }
+    ```
+
+### 智能问答知识库 (`/serviceQA`)
+
+- **GET `/serviceQA`**
+  - **描述**: 获取用于“智能问答”演示的知识库问答对。
+  - **响应示例**:
+    ```json
+    [
+      {
+        "id": 1,
+        "question": "如何修改我的账户密码？",
+        "answer": "您可以通过【个人中心】-【账户设置】-【修改密码】来重设您的密码。"
+      }
+    ]
+    ```
 
 ## 项目结构
 
@@ -88,19 +160,19 @@ npm run preview
 /
 ├── public/                # 静态资源
 ├── src/
+│   ├── api/               # API 服务层
+│   │   └── index.ts       # Axios 实例和 API 请求函数
 │   ├── assets/            # 图片等资产文件
 │   ├── components/        # 可复用组件
 │   │   ├── InteractiveQueryDemo.vue  # 智能问答演示组件
-│   │   ├── AgentAssistDemo.vue       # 客服辅助演示组件
-│   │   └── ReviewQueueDemo.vue       # 审核队列演示组件 
-│   ├── services/          # 服务层
-│   │   ├── api.types.ts             # API通用类型定义
-│   │   ├── interactiveQuery.service.ts # 智能问答服务
-│   │   ├── agentAssist.service.ts    # 客服辅助服务
-│   │   └── reviewQueue.service.ts    # 审核队列服务
+│   │   ├── ReviewQueueDemo.vue       # 质检队列演示组件
+│   │   └── AgentAssistDemo.vue       # 客服辅助演示组件
+
 │   ├── App.vue            # 主应用组件
 │   ├── main.ts            # 应用入口
-│   └── reportData.ts      # 演示数据
+│   └── reportData.ts      # 共享的 TypeScript 类型定义
+├── .gitignore
+├── db.json                # 模拟 API 数据源
 ├── index.html             # HTML 模板
 ├── package.json           # 项目配置
 ├── tsconfig.json          # TypeScript 配置
@@ -110,26 +182,13 @@ npm run preview
 
 ## 如何进行开发
 
-1. 在 `reportData.ts` 中添加或修改演示数据
-2. 修改 `components` 目录下的组件以更新演示功能
-3. 修改 `App.vue` 以更改整体布局或导航结构
-4. 开发后端API时参考 `API_DOCUMENTATION.md` 文档
+当前项目的数据流已通过 `json-server` 进行模拟。开发流程如下：
 
-## 最新更新 (v0.0.5, 2025-05-10)
+1. **修改数据**: 直接编辑根目录下的 `db.json` 文件来添加或修改用于演示的数据。
+2. **扩展 API**: 如果需要新的数据接口，可以在 `db.json` 中添加新的一级键，`json-server` 会自动创建对应的 RESTful API 路由。
+3. **更新前端组件**: 修改 `src/components/` 目录下的 Vue 组件以实现新的业务逻辑或 UI 界面。
+4. **调用 API**: 在 `src/api/index.ts` 中添加新的函数来调用 API，并在组件中使用这些函数获取或更新数据。
 
-### 服务层架构完善
-- 新增完整TypeScript服务层，包含三大模块：
-  - 智能问答服务 (`interactiveQuery.service.ts`)
-  - 客服辅助服务 (`agentAssist.service.ts`) 
-  - 知识库审核队列服务 (`reviewQueue.service.ts`)
-- 引入标准API响应格式和错误处理
-- 添加详细的JSDoc注释和类型声明
-- 实现了符合RESTful规范的API调用方法
-
-### API文档
-- 新增 `API_DOCUMENTATION.md` 提供完整的API参考
-- 包括请求格式、响应格式和参数说明
-- 便于前后端协作开发
 
 ## 未来规划
 

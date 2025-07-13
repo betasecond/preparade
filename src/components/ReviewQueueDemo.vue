@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
-import { ReviewQueueServiceImpl, type ReviewQueueItem } from '../services/reviewQueue.service';
+import type { ReviewItem } from '../reportData';
+import { getReviewQueue, updateReviewItem } from '../api';
 
 // 初始化状态
-const reviewItems = ref<ReviewQueueItem[]>([]);
-const isLoading = ref(false);
-const errorMessage = ref('');
+const reviewItems = ref<ReviewItem[]>([]);
+
 const selectedItemId = ref<string | null>(null);
 const filterStatus = ref<string>('all');
 const filterSource = ref<string>('all');
 const sortBy = ref<string>('latest');
+const showSuccessModal = ref(false);
+const showRejectModal = ref(false);
+const activeTab = ref('pending');
+const isLoading = ref(true);
+const apiError = ref<string | null>(null);
 
 // 支持的标签选项
 const availableTags = ref<string[]>([]);
@@ -144,6 +149,22 @@ const selectItem = async (id: string) => {
   }
 };
 
+const fetchReviewQueue = async () => {
+  isLoading.value = true;
+  apiError.value = null;
+  try {
+    reviewItems.value = await getReviewQueue();
+  } catch (error) {
+    console.error('Failed to fetch review queue data:', error);
+    apiError.value = '数据加载失败，请检查 API 服务器是否运行或刷新页面重试。';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 在组件挂载时获取数据
+onMounted(fetchReviewQueue);
+
 // 添加标签
 const addTag = () => {
   if (editForm.newTag && !editForm.tags.includes(editForm.newTag)) {
@@ -179,96 +200,75 @@ const removeKeyword = (keyword: string) => {
 // 审核操作
 const approveItem = async (saveChanges: boolean = false) => {
   if (!selectedItemId.value) return;
-  isLoading.value = true;
-  errorMessage.value = '';
-  
+  const itemId = selectedItemId.value;
+  apiError.value = null;
+
   try {
-    const request = {
-      itemId: selectedItemId.value,
-      decision: 'approve',
-      standardQuestion: saveChanges ? editForm.standardQuestion : undefined,
-      suggestedAnswer: saveChanges ? editForm.standardAnswer : undefined,
-      metadata: saveChanges ? {
-        tags: editForm.tags,
-        keywords: editForm.keywords,
-        expirationDate: editForm.expirationDate
-      } : undefined,
-      comment: editForm.comment
-    };
-    
-    const response = await reviewQueueService.submitReviewDecision(request);
-    
-    if (response.code === 200) {
-      // 更新本地状态
-      await loadQueueData();
-      await loadStats();
-      selectedItemId.value = null;
-    } else {
-      errorMessage.value = response.message || '操作失败';
+    let updatedData: Partial<ReviewItem> = { status: 'approved' };
+    if (saveChanges) {
+      updatedData = {
+        ...updatedData,
+        standardQuestion: editForm.standardQuestion,
+        suggestedAnswer: editForm.standardAnswer,
+        metadata: {
+          tags: editForm.tags,
+          keywords: editForm.keywords,
+          expirationDate: editForm.expirationDate
+        }
+      };
     }
+    
+    const updatedItem = await updateReviewItem(itemId, updatedData);
+    
+    // 更新本地数据
+    const itemIndex = reviewItems.value.findIndex(item => item.id === itemId);
+    if (itemIndex > -1) {
+      reviewItems.value[itemIndex] = updatedItem;
+    }
+    
+    selectedItemId.value = null;
   } catch (error) {
-    console.error('审批操作失败:', error);
-    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
-  } finally {
-    isLoading.value = false;
+    console.error(`Failed to approve item ${itemId}:`, error);
+    apiError.value = `批准操作失败: ${error instanceof Error ? error.message : '未知错误'}`;
+
   }
 };
 
 const rejectItem = async () => {
   if (!selectedItemId.value) return;
-  isLoading.value = true;
-  errorMessage.value = '';
-  
+  const itemId = selectedItemId.value;
+  apiError.value = null;
+
   try {
-    const request = {
-      itemId: selectedItemId.value,
-      decision: 'reject',
-      comment: editForm.comment
-    };
-    
-    const response = await reviewQueueService.submitReviewDecision(request);
-    
-    if (response.code === 200) {
-      await loadQueueData();
-      await loadStats();
-      selectedItemId.value = null;
-    } else {
-      errorMessage.value = response.message || '操作失败';
+    const updatedItem = await updateReviewItem(itemId, { status: 'rejected' });
+    const itemIndex = reviewItems.value.findIndex(item => item.id === itemId);
+    if (itemIndex > -1) {
+      reviewItems.value[itemIndex] = updatedItem;
     }
+    selectedItemId.value = null;
   } catch (error) {
-    console.error('拒绝操作失败:', error);
-    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
-  } finally {
-    isLoading.value = false;
+    console.error(`Failed to reject item ${itemId}:`, error);
+    apiError.value = `拒绝操作失败: ${error instanceof Error ? error.message : '未知错误'}`;
+
   }
 };
 
 const needMoreInfo = async () => {
   if (!selectedItemId.value) return;
-  isLoading.value = true;
-  errorMessage.value = '';
-  
+  const itemId = selectedItemId.value;
+  apiError.value = null;
+
   try {
-    const request = {
-      itemId: selectedItemId.value,
-      decision: 'needsInfo',
-      comment: editForm.comment
-    };
-    
-    const response = await reviewQueueService.submitReviewDecision(request);
-    
-    if (response.code === 200) {
-      await loadQueueData();
-      await loadStats();
-      selectedItemId.value = null;
-    } else {
-      errorMessage.value = response.message || '操作失败';
+    const updatedItem = await updateReviewItem(itemId, { status: 'needsInfo' });
+    const itemIndex = reviewItems.value.findIndex(item => item.id === itemId);
+    if (itemIndex > -1) {
+      reviewItems.value[itemIndex] = updatedItem;
     }
+    selectedItemId.value = null;
   } catch (error) {
-    console.error('标记需要更多信息失败:', error);
-    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试';
-  } finally {
-    isLoading.value = false;
+    console.error(`Failed to mark item ${itemId} as needs info:`, error);
+    apiError.value = `操作失败: ${error instanceof Error ? error.message : '未知错误'}`;
+
   }
 };
 
@@ -403,7 +403,12 @@ const getStatusText = (status: string) => {
         <div class="p-3 bg-indigo-50 border-b border-indigo-100">
           <h3 class="font-medium text-indigo-800">待审核列表</h3>
         </div>
-        <div class="overflow-y-auto max-h-[600px]">
+        <div v-if="isLoading" class="p-6 text-center text-gray-500">正在加载...</div>
+        <div v-else-if="apiError && reviewItems.length === 0" class="p-6 text-center text-red-500">
+          {{ apiError }}
+          <button @click="fetchReviewQueue" class="mt-2 text-sm text-indigo-600 hover:underline">重试</button>
+        </div>
+        <div v-else class="overflow-y-auto max-h-[600px]">
           <div 
             v-for="item in reviewItems" 
             :key="item.id" 
@@ -597,10 +602,21 @@ const getStatusText = (status: string) => {
               需要更多信息
             </button>
           </div>
+
+          <div v-if="apiError" class="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+            <strong>操作失败：</strong> {{ apiError }}
+          </div>
         </div>
         
         <div v-else class="h-full flex items-center justify-center">
-          <div class="text-center text-gray-400">
+          <div v-if="isLoading" class="text-center text-gray-400">
+            <p>正在加载数据...</p>
+          </div>
+          <div v-else-if="apiError" class="text-center text-red-500">
+             <p>{{ apiError }}</p>
+             <button @click="fetchReviewQueue" class="mt-2 text-sm text-indigo-600 hover:underline">重试</button>
+          </div>
+          <div v-else class="text-center text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>

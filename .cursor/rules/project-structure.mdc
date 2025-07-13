@@ -1,0 +1,30 @@
+# AI 智能体客服演示平台 - 项目结构规则
+
+## 核心架构
+- **主入口**: [src/main.ts](mdc:src/main.ts) 启动 Vue 应用
+- **根组件**: [src/App.vue](mdc:src/App.vue) 动态渲染演示组件
+- **数据源**: [src/reportData.ts](mdc:src/reportData.ts) 定义所有演示内容和组件映射
+- **样式**: [src/style.css](mdc:src/style.css) 全局样式，[tailwind.config.js](mdc:tailwind.config.js) TailwindCSS 配置
+
+## 组件组织
+- **演示组件**: [src/components/](mdc:src/components/) 目录包含所有演示组件
+  - [InteractiveQueryDemo.vue](mdc:src/components/InteractiveQueryDemo.vue) - 智能问答演示
+  - [AgentAssistDemo.vue](mdc:src/components/AgentAssistDemo.vue) - 客服辅助演示  
+  - [ReviewQueueDemo.vue](mdc:src/components/ReviewQueueDemo.vue) - 审核队列演示
+- **数据文件**: CSV 数据文件直接放在组件目录中，如 [客服客诉对接话术-数据集.csv](mdc:src/components/客服客诉对接话术-数据集.csv)
+
+## 配置文件
+- [package.json](mdc:package.json) - 项目依赖和脚本
+- [vite.config.ts](mdc:vite.config.ts) - Vite 构建配置
+- [tsconfig.json](mdc:tsconfig.json) - TypeScript 配置
+- [postcss.config.js](mdc:postcss.config.js) - PostCSS 配置
+
+## 开发约定
+- 使用 Vue 3 + TypeScript + TailwindCSS
+- 单文件组件 (.vue) 使用 `<script setup>` 语法
+- 类型定义集中在 [src/reportData.ts](mdc:src/reportData.ts)
+- 纯 TailwindCSS 样式，避免 scoped styles
+description:
+globs:
+alwaysApply: false
+---

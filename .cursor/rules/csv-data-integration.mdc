@@ -1,0 +1,127 @@
+# CSV 数据集成模式
+
+## 导入 CSV 数据
+
+使用 Vite 的 `?raw` 后缀直接将 CSV 文件作为字符串导入。
+
+```typescript
+import csvData from './path/to/your/data.csv?raw';
+```
+
+## 解析 CSV 数据
+
+### 健壮的解析方法（推荐）
+
+简单的 `line.split(',')` 无法处理字段内包含逗号（例如 `"内容,包含逗号"`）的情况。为了提高解析的健壮性，推荐使用正则表达式来处理这种情况。
+
+以下是一个更可靠的解析函数示例，它能够正确处理带引号的字段：
+
+```typescript
+import type { ServiceQA } from '../reportData'; // 假设类型已定义
+
+const parseCSVData = (csvString: string): ServiceQA[] => {
+  const lines = csvString.trim().split('\\n');
+  const headers = lines[0].split(',');
+
+  // 正则表达式用于匹配 CSV 字段，能处理带引号的逗号
+  const regex = /(?:"([^"]*(?:""[^"]*)*)"|([^,]*))(?:,|$)/g;
+
+  return lines.slice(1).map((line, index) => {
+    const values: string[] = [];
+    let match;
+    while (match = regex.exec(line)) {
+      // 如果是带引号的字段，取第一个捕获组；否则取第二个
+      values.push(match[1] ? match[1].replace(/""/g, '"') : match[2]);
+    }
+
+    return {
+      id: index + 1,
+      question: values[0]?.trim() || '',
+      answer: values[1]?.trim() || '',
+      // 假设 keywords 在第三列，以 | 分隔
+      keywords: values[2]?.split('|').map(k => k.trim()) || []
+    };
+  });
+};
+```
+
+### 简单解析方法（仅限简单场景）
+
+如果能确保 CSV 文件结构非常简单，字段内绝不包含逗号，则可以使用 `split` 方法。
+
+```typescript
+const simpleParseCSV = (csvString: string) => {
+  const lines = csvString.trim().split('\\n');
+  return lines.slice(1).map(line => line.split(','));
+};
+```
+
+## 数据接口定义
+```typescript
+interface ServiceQA {
+  index: number;
+  question: string;
+  answer: string;
+  keywords?: string[];
+}
+
+interface CSVDataConfig {
+  data: ServiceQA[];
+  loading: boolean;
+  error: string | null;
+}
+```
+
+## 组件集成模式
+```vue
+<script setup lang="ts">
+import csvData from './filename.csv?raw';
+
+// 在组件挂载时解析数据
+const qaData = ref<ServiceQA[]>([]);
+const loading = ref(true);
+
+onMounted(() => {
+  try {
+    qaData.value = parseCSVData(csvData);
+  } catch (error) {
+    console.error('CSV 解析错误:', error);
+  } finally {
+    loading.value = false;
+  }
+});
+</script>
+```
+
+## 搜索匹配算法
+```typescript
+// 简单的关键词匹配算法
+const findMatchingQA = (query: string, qaList: ServiceQA[]): ServiceQA | null => {
+  const normalizedQuery = query.toLowerCase();
+  
+  return qaList.find(qa => {
+    // 检查问题文本
+    if (qa.question.toLowerCase().includes(normalizedQuery)) {
+      return true;
+    }
+    
+    // 检查关键词
+    if (qa.keywords) {
+      return qa.keywords.some(keyword => 
+        keyword.toLowerCase().includes(normalizedQuery)
+      );
+    }
+    
+    return false;
+  }) || null;
+};
+```
+
+## 文件命名约定
+- CSV 文件名使用中文描述性名称
+- 文件直接放在组件目录中
+- 使用 `?raw` 后缀进行原始导入
+description:
+globs:
+alwaysApply: false
+---

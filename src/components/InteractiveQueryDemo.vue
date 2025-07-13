@@ -14,37 +14,25 @@
     </div>
 
     <button
-      @click="getCopilotSuggestion"
+      @click="getAISuggestion"
       class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm font-medium transition-colors"
     >
-      咨询 Copilot
+      咨询 AI 智能体客服
     </button>
 
     <div v-if="isLoading" class="mt-6 text-center">
       <div class="inline-block animate-pulse-fast rounded-full bg-indigo-400 h-8 w-8"></div>
-      <p class="text-sm text-slate-500 mt-2">Copilot 正在分析...</p>
+      <p class="text-sm text-slate-500 mt-2">AI 智能体客服正在分析...</p>
     </div>
 
-    <div v-if="copilotResponse && !isLoading" class="mt-6 p-4 border border-green-300 bg-green-50 rounded-md">
-      <h4 class="text-md font-semibold text-green-800 mb-2">Copilot 分析与建议:</h4>
-      <div class="space-y-2 text-sm">
-        <p><strong class="text-green-700">识别关键词:</strong> 
-           <span class="text-slate-600">
-             {{ copilotResponse.keywordAnalysis?.map(k => k.keyword).join(', ') || '无关键词' }}
-           </span>
-        </p>
-        <p><strong class="text-green-700">匹配知识/案例:</strong> 
-           <span class="text-slate-600">
-             {{ copilotResponse.knowledgeMatches?.length ? 
-                '案例#' + copilotResponse.knowledgeMatches[0].id + '：' + copilotResponse.knowledgeMatches[0].standardQuestion : 
-                '未找到高度相似的历史案例。' }}
-           </span>
-        </p>
-        <div>
-          <strong class="text-green-700">建议回复:</strong>
-          <div class="mt-1 p-2 border border-slate-200 bg-slate-50 rounded text-slate-700">
-            {{ copilotResponse.suggestedAnswer }}
-          </div>
+    <div v-if="aiResponse && !isLoading" class="mt-6 p-4 border border-green-300 bg-green-50 rounded-md">
+      <h4 class="text-md font-semibold text-green-800 mb-2">AI 智能体客服分析与建议:</h4>
+      <div class="response-content">
+        <p class="text-slate-700 whitespace-pre-line">{{ aiResponse.content }}</p>
+        <div class="mt-3 pt-3 border-t border-green-200 text-sm">
+          <p><strong class="text-green-700">识别关键词:</strong> <span class="text-slate-600">{{ aiResponse.keywords }}</span></p>
+          <p><strong class="text-green-700">匹配知识/案例:</strong> <span class="text-slate-600">{{ aiResponse.source }}</span></p>
+
         </div>
       </div>
     </div>
@@ -55,51 +43,132 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { InteractiveQueryServiceImpl } from '../services/interactiveQuery.service';
-import type { UserQueryRequest, QueryResponse } from '../services/interactiveQuery.service';
+import { ref, onMounted } from 'vue';
+import { getServiceQA } from '../api';
+import type { ServiceQA } from '../reportData';
 
 const customerQuery = ref('');
 const isLoading = ref(false);
-const copilotResponse = ref<QueryResponse | null>(null);
+const aiResponse = ref<{ title: string; content: string; keywords: string; source: string; } | null>(null);
+
 const errorMessage = ref('');
+const serviceQADatabase = ref<ServiceQA[]>([]);
+const FALLBACK_KEYWORDS = '家具, 质量, 服务';
 
-// 实例化服务
-const queryService = new InteractiveQueryServiceImpl();
+// 加载数据
+onMounted(async () => {
+  try {
+    const data = await getServiceQA();
+    const preprocessKeywords = (question: string) => {
+      // 简单中文分词：提取所有汉字字符作为一个数组
+      const chineseChars = question.match(/\p{Script=Han}/gu);
+      if (chineseChars) {
+        return chineseChars;
+      }
+      // 对于非中文或无汉字的文本，使用原有的空格分割逻辑
+      return question.trim().split(/\s+/).filter(word => word.length > 1);
+    }
 
-// 实际调用API
-const getCopilotSuggestion = async () => {
+    const processedData = data.map(item => ({
+      ...item,
+      keywords: preprocessKeywords(item.question),
+    }));
+    
+    serviceQADatabase.value = processedData;
+  } catch (error) {
+    console.error('加载知识库失败:', error);
+    errorMessage.value = '加载知识库数据失败，请稍后再试。';
+  }
+});
+
+// 使用简单的相似度算法找到最匹配的问答对
+const findBestMatch = (query: string): ServiceQA | null => {
+  if (!serviceQADatabase.value.length) return null;
+  
+  const queryLower = query.toLowerCase();
+  let bestMatch: ServiceQA | null = null;
+  let highestScore = 0;
+  
+  serviceQADatabase.value.forEach(qa => {
+    // 计算简单的关键词匹配程度
+    const questionLower = qa.question.toLowerCase();
+    let score = 0;
+    
+    // 检查完整问题匹配度
+    if (queryLower.includes(questionLower) || questionLower.includes(queryLower)) {
+      score += 5;
+    }
+    
+    // 检查关键词匹配
+    qa.keywords?.forEach(keyword => {
+      if (queryLower.includes(keyword.toLowerCase())) {
+        score += 1;
+      }
+    });
+    
+    if (score > highestScore) {
+      highestScore = score;
+      bestMatch = qa;
+    }
+  });
+  
+  // 设置匹配阈值，低于此分数认为没有找到匹配
+  return highestScore > 0 ? bestMatch : null;
+};
+
+const getAISuggestion = () => {
+
   if (!customerQuery.value.trim()) {
-    errorMessage.value = '请输入客户问题。';
-    copilotResponse.value = null;
+    errorMessage.value = "请输入您的问题后再咨询。";
+    aiResponse.value = null; // 清除旧的回答
     return;
   }
-  isLoading.value = true;
-  copilotResponse.value = null;
   errorMessage.value = '';
+  isLoading.value = true;
+  aiResponse.value = null;
 
-  try {
-    // 准备请求参数
-    const request: UserQueryRequest = {
-      query: customerQuery.value,
-      sessionId: 'demo-session-' + Date.now(),
-      source: 'web-demo'
-    };
-
-    // 调用API
-    const response = await queryService.submitQuery(request);
+  // 模拟AI思考过程
+  setTimeout(() => {
+    const bestMatch = findBestMatch(customerQuery.value);
     
-    // 处理响应
-    if (response.code === 200) {
-      copilotResponse.value = response.data;
+    if (bestMatch) {
+      // 提取问题中的关键词，最多展示5个
+      const extractedKeywords = bestMatch.keywords?.slice(0, 5).join(', ') || FALLBACK_KEYWORDS;
+      
+      aiResponse.value = {
+        title: 'AI 知识库建议',
+        content: bestMatch.answer,
+        keywords: extractedKeywords,
+        source: '内部知识库'
+      };
     } else {
-      errorMessage.value = response.message || '请求失败';
+      aiResponse.value = {
+        title: 'AI 无明确答案',
+        content: '抱歉，对于您的问题，知识库中暂无直接匹配的答案。请尝试换个问法或联系人工客服。',
+        keywords: '无匹配',
+        source: '无'
+      };
     }
-  } catch (error) {
-    console.error('获取智能回答失败:', error);
-    errorMessage.value = error instanceof Error ? error.message : '服务暂时不可用，请稍后再试。';
-  } finally {
     isLoading.value = false;
-  }
+  }, 1000);
 };
 </script>
+
+<style scoped>
+/* 保持原有样式不变 */
+.animate-pulse-fast {
+  animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-fast {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+}
+</style>
+

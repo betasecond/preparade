@@ -1,0 +1,64 @@
+# Vue 3 + TypeScript 开发模式
+
+## 组件结构模式
+```vue
+<template>
+  <!-- 使用 TailwindCSS 类名 -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <!-- 组件内容 -->
+  </div>
+</template>
+
+<script setup lang="ts">
+// 导入类型定义
+import type { ReportContentItem } from '../reportData';
+
+// 响应式状态管理
+const items = ref<Item[]>([]);
+const editForm = reactive({
+  field1: '',
+  field2: []
+});
+
+// 计算属性
+const filteredItems = computed(() => {
+  return items.value.filter(item => /* 筛选逻辑 */);
+});
+
+// 方法定义
+const handleSubmit = () => {
+  // 处理逻辑
+};
+</script>
+```
+
+## TypeScript 接口定义
+```typescript
+// 明确的接口定义
+interface ServiceQA {
+  index: number;
+  question: string;
+  answer: string;
+  keywords?: string[];
+}
+
+// 泛型 ref 类型声明
+const data = ref<ServiceQA[]>([]);
+const response = ref<{ keywords: string; suggestedReply: string } | null>(null);
+```
+
+## 命名约定
+- **变量**: camelCase，如 `customerQuery`, `aiResponse`
+- **组件**: PascalCase，如 `InteractiveQueryDemo`
+- **函数**: camelCase，动词开头，如 `getAISuggestion`, `analyzeAgentInput`
+- **CSS 类**: TailwindCSS 原生类名
+
+## 状态管理模式
+- **简单状态**: 使用 `ref<T>()`
+- **复杂对象**: 使用 `reactive({})`
+- **计算属性**: 使用 `computed(() => {})`
+- **监听器**: 使用 `watch()` 或 `watchEffect()`
+description:
+globs:
+alwaysApply: false
+---
