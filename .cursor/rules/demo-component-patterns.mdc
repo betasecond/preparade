@@ -1,0 +1,134 @@
+# 演示组件开发模式
+
+## 组件注册模式
+在 [src/reportData.ts](mdc:src/reportData.ts) 中定义演示内容：
+```typescript
+export interface ReportContentItem {
+  type: 'demo';
+  title: string;
+  description: string;
+  demoComponent: 'InteractiveQueryDemo' | 'AgentAssistDemo' | 'ReviewQueueDemo';
+  // 其他配置...
+}
+```
+
+在 [src/App.vue](mdc:src/App.vue) 中动态渲染：
+```vue
+<template>
+  <InteractiveQueryDemo v-if="item.demoComponent === 'InteractiveQueryDemo'" />
+  <AgentAssistDemo v-if="item.demoComponent === 'AgentAssistDemo'" />
+  <ReviewQueueDemo v-if="item.demoComponent === 'ReviewQueueDemo'" />
+</template>
+```
+
+## 演示组件结构
+```vue
+<template>
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <!-- 标题区域 -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-900">演示标题</h2>
+      <p class="text-gray-600">演示描述</p>
+    </div>
+    
+    <!-- 交互区域 -->
+    <div class="space-y-4">
+      <!-- 输入/控制区域 -->
+      <div class="flex gap-4">
+        <input v-model="userInput" class="flex-1 px-3 py-2 border rounded-md" />
+        <button @click="handleAction" class="px-4 py-2 bg-indigo-600 text-white rounded-md">
+          执行
+        </button>
+      </div>
+      
+      <!-- 结果展示区域 -->
+      <div class="bg-gray-50 rounded-md p-4">
+        <!-- 结果内容 -->
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+// 响应式状态
+const userInput = ref('');
+const result = ref(null);
+const loading = ref(false);
+
+// 模拟 API 调用
+const handleAction = async () => {
+  loading.value = true;
+  try {
+    // 模拟延迟
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    result.value = { /* 模拟结果 */ };
+  } finally {
+    loading.value = false;
+  }
+};
+</script>
+```
+
+## 状态管理模式
+```typescript
+// 演示状态接口
+interface DemoState {
+  loading: boolean;
+  error: string | null;
+  data: any[];
+  filters: Record<string, any>;
+}
+
+// 状态初始化
+const state = reactive<DemoState>({
+  loading: false,
+  error: null,
+  data: [],
+  filters: {}
+});
+
+// 状态更新方法
+const updateState = (updates: Partial<DemoState>) => {
+  Object.assign(state, updates);
+};
+```
+
+## 交互模式
+```typescript
+// 表单处理
+const handleSubmit = (event: Event) => {
+  event.preventDefault();
+  // 处理逻辑
+};
+
+// 筛选处理
+const handleFilter = (filterType: string, value: any) => {
+  state.filters[filterType] = value;
+  // 应用筛选
+};
+
+// 分页处理
+const handlePageChange = (page: number) => {
+  // 更新分页状态
+};
+```
+
+## 模拟数据模式
+```typescript
+// 模拟 API 响应
+const mockApiCall = async (params: any) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        success: true,
+        data: [/* 模拟数据 */],
+        message: '操作成功'
+      });
+    }, 1000);
+  });
+};
+```
+description:
+globs:
+alwaysApply: false
+---

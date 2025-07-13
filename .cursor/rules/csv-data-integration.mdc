@@ -1,0 +1,96 @@
+# CSV 数据集成模式
+
+## 导入模式
+```typescript
+// 使用 Vite 的 ?raw 导入获取原始 CSV 内容
+import csvData from './客服客诉对接话术-数据集.csv?raw';
+```
+
+## 解析函数模式
+```typescript
+// 解析 CSV 数据的标准模式
+const parseCSVData = (csvString: string): ServiceQA[] => {
+  const lines = csvString.trim().split('\n');
+  const headers = lines[0].split(',');
+  
+  return lines.slice(1).map((line, index) => {
+    const values = line.split(',');
+    return {
+      index: index + 1,
+      question: values[0]?.trim() || '',
+      answer: values[1]?.trim() || '',
+      keywords: values[2]?.split('|').map(k => k.trim()) || []
+    };
+  });
+};
+```
+
+## 数据接口定义
+```typescript
+interface ServiceQA {
+  index: number;
+  question: string;
+  answer: string;
+  keywords?: string[];
+}
+
+interface CSVDataConfig {
+  data: ServiceQA[];
+  loading: boolean;
+  error: string | null;
+}
+```
+
+## 组件集成模式
+```vue
+<script setup lang="ts">
+import csvData from './filename.csv?raw';
+
+// 在组件挂载时解析数据
+const qaData = ref<ServiceQA[]>([]);
+const loading = ref(true);
+
+onMounted(() => {
+  try {
+    qaData.value = parseCSVData(csvData);
+  } catch (error) {
+    console.error('CSV 解析错误:', error);
+  } finally {
+    loading.value = false;
+  }
+});
+</script>
+```
+
+## 搜索匹配算法
+```typescript
+// 简单的关键词匹配算法
+const findMatchingQA = (query: string, qaList: ServiceQA[]): ServiceQA | null => {
+  const normalizedQuery = query.toLowerCase();
+  
+  return qaList.find(qa => {
+    // 检查问题文本
+    if (qa.question.toLowerCase().includes(normalizedQuery)) {
+      return true;
+    }
+    
+    // 检查关键词
+    if (qa.keywords) {
+      return qa.keywords.some(keyword => 
+        keyword.toLowerCase().includes(normalizedQuery)
+      );
+    }
+    
+    return false;
+  }) || null;
+};
+```
+
+## 文件命名约定
+- CSV 文件名使用中文描述性名称
+- 文件直接放在组件目录中
+- 使用 `?raw` 后缀进行原始导入
+description:
+globs:
+alwaysApply: false
+---

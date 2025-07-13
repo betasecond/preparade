@@ -1,0 +1,70 @@
+# TailwindCSS 设计系统
+
+## 颜色系统
+- **主色调**: `indigo-*` 系列作为主色调
+- **文本色**: `slate-*` 系列作为文本色
+- **状态颜色映射**:
+  - 成功/批准: `green-*` (如 `green-500`, `green-600`)
+  - 警告/待处理: `yellow-*` 或 `amber-*` (如 `yellow-500`, `amber-500`)
+  - 错误/拒绝: `red-*` (如 `red-500`, `red-600`)
+  - 信息: `blue-*` (如 `blue-500`, `blue-600`)
+
+## 布局模式
+```html
+<!-- 卡片容器 -->
+<div class="bg-white rounded-lg shadow-md p-6">
+  <!-- 内容 -->
+</div>
+
+<!-- 响应式网格 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <!-- 网格项目 -->
+</div>
+
+<!-- 弹性布局 -->
+<div class="flex items-center justify-between">
+  <!-- 弹性项目 -->
+</div>
+```
+
+## 响应式断点
+- **移动端**: 默认样式 (无前缀)
+- **平板端**: `md:` 前缀 (768px+)
+- **桌面端**: `lg:` 前缀 (1024px+)
+- **大屏端**: `xl:` 前缀 (1280px+)
+
+## 常用组件样式
+```html
+<!-- 按钮 -->
+<button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+  按钮文本
+</button>
+
+<!-- 输入框 -->
+<input class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+
+<!-- 表格 -->
+<table class="min-w-full divide-y divide-gray-200">
+  <thead class="bg-gray-50">
+    <tr>
+      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标题</th>
+    </tr>
+  </thead>
+</table>
+```
+
+## 状态样式
+```html
+<!-- 加载状态 -->
+<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+
+<!-- 禁用状态 -->
+<button class="opacity-50 cursor-not-allowed" disabled>禁用按钮</button>
+
+<!-- 激活状态 -->
+<div class="ring-2 ring-indigo-500 ring-offset-2">激活元素</div>
+```
+description:
+globs:
+alwaysApply: false
+---
