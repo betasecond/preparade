@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
-import { reviewQueueData, type ReviewItem } from '../reportData';
+import { ref, reactive, computed, onMounted } from 'vue';
+import type { ReviewItem } from '../reportData';
+import { getReviewQueue, updateReviewItem } from '../api';
 
 // 初始化状态
-const reviewItems = ref<ReviewItem[]>(reviewQueueData);
+const reviewItems = ref<ReviewItem[]>([]);
 const selectedItemId = ref<string | null>(null);
 const filterStatus = ref<string>('all');
 const filterSource = ref<string>('all');
@@ -71,6 +72,15 @@ const selectItem = (id: string) => {
   }
 };
 
+// 在组件挂载时获取数据
+onMounted(async () => {
+  try {
+    reviewItems.value = await getReviewQueue();
+  } catch (error) {
+    console.error('Failed to fetch review queue data:', error);
+  }
+});
+
 // 添加标签
 const addTag = () => {
   if (editForm.newTag && !editForm.tags.includes(editForm.newTag)) {
@@ -104,49 +114,68 @@ const removeKeyword = (keyword: string) => {
 };
 
 // 审核操作
-const approveItem = (saveChanges: boolean = false) => {
+const approveItem = async (saveChanges: boolean = false) => {
   if (!selectedItemId.value) return;
-  
-  const itemIndex = reviewItems.value.findIndex(item => item.id === selectedItemId.value);
-  if (itemIndex > -1) {
+  const itemId = selectedItemId.value;
+
+  try {
+    let updatedData: Partial<ReviewItem> = { status: 'approved' };
     if (saveChanges) {
-      reviewItems.value[itemIndex] = {
-        ...reviewItems.value[itemIndex],
+      updatedData = {
+        ...updatedData,
         standardQuestion: editForm.standardQuestion,
         suggestedAnswer: editForm.standardAnswer,
         metadata: {
           tags: editForm.tags,
           keywords: editForm.keywords,
           expirationDate: editForm.expirationDate
-        },
-        status: 'approved'
+        }
       };
-    } else {
-      reviewItems.value[itemIndex].status = 'approved';
     }
     
-    // 模拟API调用成功后的状态更新
+    const updatedItem = await updateReviewItem(itemId, updatedData);
+    
+    // 更新本地数据
+    const itemIndex = reviewItems.value.findIndex(item => item.id === itemId);
+    if (itemIndex > -1) {
+      reviewItems.value[itemIndex] = updatedItem;
+    }
+    
     selectedItemId.value = null;
+  } catch (error) {
+    console.error(`Failed to approve item ${itemId}:`, error);
   }
 };
 
-const rejectItem = () => {
+const rejectItem = async () => {
   if (!selectedItemId.value) return;
-  
-  const itemIndex = reviewItems.value.findIndex(item => item.id === selectedItemId.value);
-  if (itemIndex > -1) {
-    reviewItems.value[itemIndex].status = 'rejected';
+  const itemId = selectedItemId.value;
+
+  try {
+    const updatedItem = await updateReviewItem(itemId, { status: 'rejected' });
+    const itemIndex = reviewItems.value.findIndex(item => item.id === itemId);
+    if (itemIndex > -1) {
+      reviewItems.value[itemIndex] = updatedItem;
+    }
     selectedItemId.value = null;
+  } catch (error) {
+    console.error(`Failed to reject item ${itemId}:`, error);
   }
 };
 
-const needMoreInfo = () => {
+const needMoreInfo = async () => {
   if (!selectedItemId.value) return;
-  
-  const itemIndex = reviewItems.value.findIndex(item => item.id === selectedItemId.value);
-  if (itemIndex > -1) {
-    reviewItems.value[itemIndex].status = 'needsInfo';
+  const itemId = selectedItemId.value;
+
+  try {
+    const updatedItem = await updateReviewItem(itemId, { status: 'needsInfo' });
+    const itemIndex = reviewItems.value.findIndex(item => item.id === itemId);
+    if (itemIndex > -1) {
+      reviewItems.value[itemIndex] = updatedItem;
+    }
     selectedItemId.value = null;
+  } catch (error) {
+    console.error(`Failed to mark item ${itemId} as needs info:`, error);
   }
 };
 

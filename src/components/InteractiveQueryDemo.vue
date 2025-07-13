@@ -46,15 +46,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import csvData from './客服客诉对接话术-数据集 - 客服客诉对接话术-数据集.csv?raw';
-
-// 定义客服对话数据接口
-interface ServiceQA {
-  index: number; 
-  question: string;
-  answer: string;
-  keywords?: string[];
-}
+import { getServiceQA, type ServiceQA } from '../api';
 
 const customerQuery = ref('');
 const isLoading = ref(false);
@@ -62,37 +54,16 @@ const aiResponse = ref<{ keywords: string; matchedCase: string; suggestedReply: 
 const errorMessage = ref('');
 const serviceQADatabase = ref<ServiceQA[]>([]);
 
-// 解析CSV数据
-const parseCSVData = () => {
-  const lines = csvData.split('\n').filter(line => line.trim());
-  // 跳过标题行
-  const dataLines = lines.slice(1);
-  
-  const result: ServiceQA[] = [];
-  
-  dataLines.forEach(line => {
-    const columns = line.split(',');
-    if (columns.length >= 3) {
-      const qa: ServiceQA = {
-        index: parseInt(columns[0]) || 0,
-        question: columns[1]?.trim() || '',
-        answer: columns[2]?.trim() || '',
-        // 从问题中提取关键词
-        keywords: columns[1]?.trim().split(/\s+/).filter(word => word.length > 1) || []
-      };
-      result.push(qa);
-    }
-  });
-  
-  return result;
-};
-
 // 加载数据
-onMounted(() => {
+onMounted(async () => {
   try {
-    serviceQADatabase.value = parseCSVData();
+    const data = await getServiceQA();
+    serviceQADatabase.value = data.map(item => ({
+      ...item,
+      keywords: item.question.trim().split(/\s+/).filter(word => word.length > 1)
+    }));
   } catch (error) {
-    console.error('解析CSV数据失败:', error);
+    console.error('加载知识库失败:', error);
     errorMessage.value = '加载知识库数据失败，请稍后再试。';
   }
 });
@@ -154,7 +125,7 @@ const getAISuggestion = async () => {
     
     aiResponse.value = {
       keywords: extractedKeywords,
-      matchedCase: `案例#${bestMatch.index}: ${bestMatch.question.slice(0, 30)}${bestMatch.question.length > 30 ? '...' : ''}`,
+      matchedCase: `案例#${bestMatch.id}: ${bestMatch.question.slice(0, 30)}${bestMatch.question.length > 30 ? '...' : ''}`,
       suggestedReply: bestMatch.answer,
     };
   } else {

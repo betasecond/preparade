@@ -1,12 +1,26 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { reportData, type ReportSection } from './reportData';
+import { ref, computed, onMounted } from 'vue';
+import type { ReportSection } from './reportData';
+import { getReports } from './api';
 import InteractiveQueryDemo from './components/InteractiveQueryDemo.vue';
 import AgentAssistDemo from './components/AgentAssistDemo.vue';
 import ReviewQueueDemo from './components/ReviewQueueDemo.vue';
 
-const reportSections = ref<ReportSection[]>(reportData);
-const selectedSectionId = ref<string>(reportData[0]?.id || ''); 
+const reportSections = ref<ReportSection[]>([]);
+const selectedSectionId = ref<string>(''); 
+
+onMounted(async () => {
+  try {
+    const data = await getReports();
+    reportSections.value = data;
+    if (data.length > 0) {
+      selectedSectionId.value = data[0].id;
+    }
+  } catch (error) {
+    console.error('Failed to fetch report sections:', error);
+    // Optionally, set an error state to show in the UI
+  }
+});
 
 const currentSection = computed(() => {
   return reportSections.value.find(sec => sec.id === selectedSectionId.value) || null;
