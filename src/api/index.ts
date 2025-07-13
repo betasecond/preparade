@@ -1,8 +1,8 @@
 import axios from 'axios';
-import type { ReportSection, ReviewItem } from '../reportData';
+import type { ReportSection, ReviewItem, ServiceQA } from '../reportData';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,13 +22,6 @@ export const getReviewItemById = (id: string): Promise<ReviewItem> => {
 
 export const updateReviewItem = (id: string, data: Partial<ReviewItem>): Promise<ReviewItem> => {
   return apiClient.patch(`/reviewQueue/${id}`, data).then(res => res.data);
-}
-
-export interface ServiceQA {
-  id: number;
-  question: string;
-  answer: string;
-  keywords?: string[];
 }
 
 export const getServiceQA = (): Promise<ServiceQA[]> => {

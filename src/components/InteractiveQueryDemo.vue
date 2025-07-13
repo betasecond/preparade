@@ -53,15 +53,21 @@ const isLoading = ref(false);
 const aiResponse = ref<{ keywords: string; matchedCase: string; suggestedReply: string } | null>(null);
 const errorMessage = ref('');
 const serviceQADatabase = ref<ServiceQA[]>([]);
+const FALLBACK_KEYWORDS = '家具, 质量, 服务';
 
 // 加载数据
 onMounted(async () => {
   try {
     const data = await getServiceQA();
-    serviceQADatabase.value = data.map(item => ({
+    const preprocessKeywords = (question: string) => 
+      question.trim().split(/\s+/).filter(word => word.length > 1);
+
+    const processedData = data.map(item => ({
       ...item,
-      keywords: item.question.trim().split(/\s+/).filter(word => word.length > 1)
+      keywords: preprocessKeywords(item.question),
     }));
+    
+    serviceQADatabase.value = processedData;
   } catch (error) {
     console.error('加载知识库失败:', error);
     errorMessage.value = '加载知识库数据失败，请稍后再试。';
@@ -121,7 +127,7 @@ const getAISuggestion = async () => {
 
   if (bestMatch) {
     // 提取问题中的关键词，最多展示5个
-    const extractedKeywords = bestMatch.keywords?.slice(0, 5).join(', ') || '家具, 质量, 服务';
+    const extractedKeywords = bestMatch.keywords?.slice(0, 5).join(', ') || FALLBACK_KEYWORDS;
     
     aiResponse.value = {
       keywords: extractedKeywords,

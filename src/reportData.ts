@@ -30,3 +30,10 @@ export interface ReviewItem {
     expirationDate?: string;
   }
 }
+
+export interface ServiceQA {
+  id: number;
+  question: string;
+  answer: string;
+  keywords?: string[];
+}
