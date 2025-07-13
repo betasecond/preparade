@@ -1,27 +1,58 @@
 # CSV 数据集成模式
 
-## 导入模式
+## 导入 CSV 数据
+
+使用 Vite 的 `?raw` 后缀直接将 CSV 文件作为字符串导入。
+
 ```typescript
-// 使用 Vite 的 ?raw 导入获取原始 CSV 内容
-import csvData from './客服客诉对接话术-数据集.csv?raw';
+import csvData from './path/to/your/data.csv?raw';
 ```
 
-## 解析函数模式
+## 解析 CSV 数据
+
+### 健壮的解析方法（推荐）
+
+简单的 `line.split(',')` 无法处理字段内包含逗号（例如 `"内容,包含逗号"`）的情况。为了提高解析的健壮性，推荐使用正则表达式来处理这种情况。
+
+以下是一个更可靠的解析函数示例，它能够正确处理带引号的字段：
+
 ```typescript
-// 解析 CSV 数据的标准模式
+import type { ServiceQA } from '../reportData'; // 假设类型已定义
+
 const parseCSVData = (csvString: string): ServiceQA[] => {
-  const lines = csvString.trim().split('\n');
+  const lines = csvString.trim().split('\\n');
   const headers = lines[0].split(',');
-  
+
+  // 正则表达式用于匹配 CSV 字段，能处理带引号的逗号
+  const regex = /(?:"([^"]*(?:""[^"]*)*)"|([^,]*))(?:,|$)/g;
+
   return lines.slice(1).map((line, index) => {
-    const values = line.split(',');
+    const values: string[] = [];
+    let match;
+    while (match = regex.exec(line)) {
+      // 如果是带引号的字段，取第一个捕获组；否则取第二个
+      values.push(match[1] ? match[1].replace(/""/g, '"') : match[2]);
+    }
+
     return {
-      index: index + 1,
+      id: index + 1,
       question: values[0]?.trim() || '',
       answer: values[1]?.trim() || '',
+      // 假设 keywords 在第三列，以 | 分隔
       keywords: values[2]?.split('|').map(k => k.trim()) || []
     };
   });
+};
+```
+
+### 简单解析方法（仅限简单场景）
+
+如果能确保 CSV 文件结构非常简单，字段内绝不包含逗号，则可以使用 `split` 方法。
+
+```typescript
+const simpleParseCSV = (csvString: string) => {
+  const lines = csvString.trim().split('\\n');
+  return lines.slice(1).map(line => line.split(','));
 };
 ```
 

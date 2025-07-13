@@ -27,14 +27,11 @@
 
     <div v-if="aiResponse && !isLoading" class="mt-6 p-4 border border-green-300 bg-green-50 rounded-md">
       <h4 class="text-md font-semibold text-green-800 mb-2">AI 智能体客服分析与建议:</h4>
-      <div class="space-y-2 text-sm">
-        <p><strong class="text-green-700">识别关键词:</strong> <span class="text-slate-600">{{ aiResponse.keywords }}</span></p>
-        <p><strong class="text-green-700">匹配知识/案例:</strong> <span class="text-slate-600">{{ aiResponse.matchedCase }}</span></p>
-        <div>
-          <strong class="text-green-700">建议回复:</strong>
-          <div class="mt-1 p-2 border border-slate-200 bg-slate-50 rounded text-slate-700">
-            {{ aiResponse.suggestedReply }}
-          </div>
+      <div class="response-content">
+        <p class="text-slate-700 whitespace-pre-line">{{ aiResponse.content }}</p>
+        <div class="mt-3 pt-3 border-t border-green-200 text-sm">
+          <p><strong class="text-green-700">识别关键词:</strong> <span class="text-slate-600">{{ aiResponse.keywords }}</span></p>
+          <p><strong class="text-green-700">匹配知识/案例:</strong> <span class="text-slate-600">{{ aiResponse.source }}</span></p>
         </div>
       </div>
     </div>
@@ -46,11 +43,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getServiceQA, type ServiceQA } from '../api';
+import { getServiceQA } from '../api';
+import type { ServiceQA } from '../reportData';
 
 const customerQuery = ref('');
 const isLoading = ref(false);
-const aiResponse = ref<{ keywords: string; matchedCase: string; suggestedReply: string } | null>(null);
+const aiResponse = ref<{ title: string; content: string; keywords: string; source: string; } | null>(null);
 const errorMessage = ref('');
 const serviceQADatabase = ref<ServiceQA[]>([]);
 const FALLBACK_KEYWORDS = '家具, 质量, 服务';
@@ -59,8 +57,15 @@ const FALLBACK_KEYWORDS = '家具, 质量, 服务';
 onMounted(async () => {
   try {
     const data = await getServiceQA();
-    const preprocessKeywords = (question: string) => 
-      question.trim().split(/\s+/).filter(word => word.length > 1);
+    const preprocessKeywords = (question: string) => {
+      // 简单中文分词：提取所有汉字字符作为一个数组
+      const chineseChars = question.match(/\p{Script=Han}/gu);
+      if (chineseChars) {
+        return chineseChars;
+      }
+      // 对于非中文或无汉字的文本，使用原有的空格分割逻辑
+      return question.trim().split(/\s+/).filter(word => word.length > 1);
+    }
 
     const processedData = data.map(item => ({
       ...item,
@@ -109,38 +114,57 @@ const findBestMatch = (query: string): ServiceQA | null => {
   return highestScore > 0 ? bestMatch : null;
 };
 
-const getAISuggestion = async () => {
+const getAISuggestion = () => {
   if (!customerQuery.value.trim()) {
-    errorMessage.value = '请输入客户问题。';
-    aiResponse.value = null;
+    errorMessage.value = "请输入您的问题后再咨询。";
+    aiResponse.value = null; // 清除旧的回答
     return;
   }
+  errorMessage.value = '';
   isLoading.value = true;
   aiResponse.value = null;
-  errorMessage.value = '';
 
-  // 模拟API调用和分析延迟
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  const query = customerQuery.value;
-  const bestMatch = findBestMatch(query);
-
-  if (bestMatch) {
-    // 提取问题中的关键词，最多展示5个
-    const extractedKeywords = bestMatch.keywords?.slice(0, 5).join(', ') || FALLBACK_KEYWORDS;
+  // 模拟AI思考过程
+  setTimeout(() => {
+    const bestMatch = findBestMatch(customerQuery.value);
     
-    aiResponse.value = {
-      keywords: extractedKeywords,
-      matchedCase: `案例#${bestMatch.id}: ${bestMatch.question.slice(0, 30)}${bestMatch.question.length > 30 ? '...' : ''}`,
-      suggestedReply: bestMatch.answer,
-    };
-  } else {
-    aiResponse.value = {
-      keywords: '未能精确匹配特定关键词',
-      matchedCase: '未找到高度相似的历史案例。',
-      suggestedReply: '您好，请您详细描述一下您的问题，我会尽力协助您。或者，我可以为您转接人工专家处理。',
-    };
-  }
-  isLoading.value = false;
+    if (bestMatch) {
+      // 提取问题中的关键词，最多展示5个
+      const extractedKeywords = bestMatch.keywords?.slice(0, 5).join(', ') || FALLBACK_KEYWORDS;
+      
+      aiResponse.value = {
+        title: 'AI 知识库建议',
+        content: bestMatch.answer,
+        keywords: extractedKeywords,
+        source: '内部知识库'
+      };
+    } else {
+      aiResponse.value = {
+        title: 'AI 无明确答案',
+        content: '抱歉，对于您的问题，知识库中暂无直接匹配的答案。请尝试换个问法或联系人工客服。',
+        keywords: '无匹配',
+        source: '无'
+      };
+    }
+    isLoading.value = false;
+  }, 1000);
 };
 </script>
+
+<style scoped>
+/* 保持原有样式不变 */
+.animate-pulse-fast {
+  animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-fast {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+}
+</style>

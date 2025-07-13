@@ -8,22 +8,27 @@ const apiClient = axios.create({
   },
 });
 
-export const getReports = (): Promise<ReportSection[]> => {
-  return apiClient.get('/reports').then(res => res.data);
+export const getReports = async (): Promise<ReportSection[]> => {
+  const response = await apiClient.get<ReportSection[]>('/reports');
+  return response.data;
 }
 
-export const getReviewQueue = (): Promise<ReviewItem[]> => {
-  return apiClient.get('/reviewQueue').then(res => res.data);
+export const getReviewQueue = async (): Promise<ReviewItem[]> => {
+  const response = await apiClient.get<ReviewItem[]>('/reviewQueue');
+  return response.data;
 }
 
-export const getReviewItemById = (id: string): Promise<ReviewItem> => {
-  return apiClient.get(`/reviewQueue/${id}`).then(res => res.data);
+export const getReviewItemById = async (id: string): Promise<ReviewItem> => {
+  const response = await apiClient.get<ReviewItem>(`/reviewQueue/${id}`);
+  return response.data;
 }
 
-export const updateReviewItem = (id: string, data: Partial<ReviewItem>): Promise<ReviewItem> => {
-  return apiClient.patch(`/reviewQueue/${id}`, data).then(res => res.data);
+export const updateReviewItem = async (id: string, data: Partial<ReviewItem>): Promise<ReviewItem> => {
+  const response = await apiClient.patch<ReviewItem>(`/reviewQueue/${id}`, data);
+  return response.data;
 }
 
-export const getServiceQA = (): Promise<ServiceQA[]> => {
-  return apiClient.get('/serviceQA').then(res => res.data);
+export const getServiceQA = async (): Promise<ServiceQA[]> => {
+  const response = await apiClient.get<ServiceQA[]>('/serviceQA');
+  return response.data;
 } 
