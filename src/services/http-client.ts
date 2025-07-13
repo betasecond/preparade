@@ -2,24 +2,10 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import axios from 'axios';
 
 /**
- * 环境配置
- */
-const API_ENVIRONMENTS = {
-  development: 'http://localhost:8000/api',
-  staging: 'https://staging-api.preparade.com/api',
-  production: 'https://api.preparade.com/api'
-};
-
-/**
- * 当前环境
- * 注：在实际项目中，这通常从环境变量中获取
- */
-const currentEnvironment = import.meta.env.MODE || 'development';
-
-/**
  * API 基础 URL
+ * 从 Vite 环境变量中获取，如果未设置则回退到本地3000端口
  */
-const BASE_URL = API_ENVIRONMENTS[currentEnvironment as keyof typeof API_ENVIRONMENTS];
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 /**
  * 请求超时时间 (ms)

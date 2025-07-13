@@ -12,13 +12,19 @@ const selectedSectionId = ref<string>('');
 onMounted(async () => {
   try {
     const data = await getReports();
-    reportSections.value = data;
-    if (data.length > 0) {
-      selectedSectionId.value = data[0].id;
+    // 确保从API获取的数据是一个数组
+    if (Array.isArray(data)) {
+      reportSections.value = data;
+      if (data.length > 0) {
+        selectedSectionId.value = data[0].id;
+      }
+    } else {
+      console.error('获取到的报告数据不是一个数组:', data);
+      reportSections.value = []; // 避免后续操作出错，赋值为空数组
     }
   } catch (error) {
     console.error('Failed to fetch report sections:', error);
-    // Optionally, set an error state to show in the UI
+    reportSections.value = []; // 出错时同样赋值为空数组
   }
 });
 
@@ -36,7 +42,7 @@ const formatText = (text: string): string => {
   <div class="flex h-screen bg-gray-100">
     <aside class="w-72 bg-slate-800 text-slate-100 p-6 space-y-2 overflow-y-auto shadow-lg">
       <h1 class="text-3xl font-bold mb-8 border-b border-slate-700 pb-3 text-indigo-400">
-        Copilot 演示
+        慧装易助演示
       </h1>
       <nav>
         <ul>

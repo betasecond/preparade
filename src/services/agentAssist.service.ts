@@ -13,7 +13,7 @@ export interface ConversationContext {
   /** 客服ID */
   agentId: string;
   /** 对话历史 */
-  history: ConversationMessage[];
+  dialogueHistory: ConversationMessage[];
   /** 客户信息 */
   customerInfo?: {
     /** 客户名称 */

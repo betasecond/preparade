@@ -49,7 +49,7 @@ export default {
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Copilot 概念演示</title>
+    <title>慧装易助概念演示</title>
   </head>
   <body>
     <div id="app"></div>
@@ -143,18 +143,18 @@ export const reportData: ReportSection[] = [
   {
     id: 'introduction',
     title: '1. 介绍',
-    mainTitle: '1. Copilot 概念演示介绍',
+    mainTitle: '1. 慧装易助概念演示介绍',
     content: [
-      { type: 'paragraph', text: '欢迎来到 Copilot 概念演示。本演示旨在通过简化的交互场景，帮助您理解智能客服助手 Copilot 的核心工作理念和关键能力。您可以通过左侧导航切换不同的演示模块和说明章节。' },
-      { type: 'paragraph', text: '这个演示将重点展示 Copilot 如何辅助客服代表更高效、更规范地处理客户请求。请注意，所有数据和场景均为模拟，旨在阐释概念。' },
+      { type: 'paragraph', text: '欢迎来到 慧装易助概念演示。本演示旨在通过简化的交互场景，帮助您理解智能客服助手 慧装易助的核心工作理念和关键能力。您可以通过左侧导航切换不同的演示模块和说明章节。' },
+      { type: 'paragraph', text: '这个演示将重点展示 慧装易助如何辅助客服代表更高效、更规范地处理客户请求。请注意，所有数据和场景均为模拟，旨在阐释概念。' },
     ],
   },
   {
     id: 'interactive-query-demo-section',
     title: '2. 演示：智能问答',
-    mainTitle: '2. 演示：Copilot 智能问答与建议',
+    mainTitle: '2. 演示：慧装易助智能问答与建议',
     content: [
-      { type: 'paragraph', text: '此演示模拟客户提出一个常见问题，Copilot 如何基于知识库和历史数据快速给出建议答案。' },
+      { type: 'paragraph', text: '此演示模拟客户提出一个常见问题，慧装易助如何基于知识库和历史数据快速给出建议答案。' },
       { type: 'demo', demoComponent: 'InteractiveQueryDemo' },
       { type: 'heading', level: 3, text: '演示说明' },
       { type: 'list', items: [
@@ -163,7 +163,7 @@ export const reportData: ReportSection[] = [
           '  - **识别到的关键词:** Copilot如何理解问题。',
           '  - **匹配到的知识/案例:** （模拟）从历史数据中找到的相关内容。',
           '  - **建议回复:** Copilot基于分析给出的标准回复建议。',
-          '这个过程体现了 Copilot 的 **智能搜索与匹配** 和 **基于规则的快速回复** 能力。'
+          '这个过程体现了 慧装易助的 **智能搜索与匹配** 和 **基于规则的快速回复** 能力。'
         ]
       },
     ],
@@ -171,9 +171,9 @@ export const reportData: ReportSection[] = [
   {
     id: 'agent-assist-demo-section',
     title: '3. 演示：客服辅助',
-    mainTitle: '3. 演示：Copilot 客服实时辅助',
+    mainTitle: '3. 演示：慧装易助客服实时辅助',
     content: [
-      { type: 'paragraph', text: '此演示模拟客服代表在回复客户时，Copilot 如何提供实时的输入辅助和合规提醒。' },
+      { type: 'paragraph', text: '此演示模拟客服代表在回复客户时，慧装易助如何提供实时的输入辅助和合规提醒。' },
       { type: 'demo', demoComponent: 'AgentAssistDemo' },
       { type: 'heading', level: 3, text: '演示说明' },
       { type: 'list', items: [
@@ -182,7 +182,7 @@ export const reportData: ReportSection[] = [
           '  - **信息补全提示:** 例如，提示您询问客户订单号。',
           '  - **安抚语建议:** 当检测到负面情绪词汇时（本演示简化）。',
           '  - **合规提醒:** 例如，提示您使用了不推荐的词语或遗漏了标准问候。',
-          '这个过程体现了 Copilot 的 **规则执行与提醒**、**信息补全提示** 和 **开场白/安抚话建议** 等能力。'
+          '这个过程体现了 慧装易助的 **规则执行与提醒**、**信息补全提示** 和 **开场白/安抚话建议** 等能力。'
         ]
       },
     ],
@@ -190,9 +190,9 @@ export const reportData: ReportSection[] = [
   {
     id: 'core-logic',
     title: '4. 核心逻辑回顾',
-    mainTitle: '4. Copilot 核心逻辑回顾',
+    mainTitle: '4. 慧装易助核心逻辑回顾',
     content: [
-      { type: 'paragraph', text: '通过以上演示，我们可以看到 Copilot 的核心逻辑在于：' },
+      { type: 'paragraph', text: '通过以上演示，我们可以看到 慧装易助的核心逻辑在于：' },
       { type: 'list', items: [
           '**理解与分析:** 运用自然语言处理技术理解客户意图和客服输入。',
           '**数据驱动:** 依赖历史对话数据和结构化知识库进行智能匹配和推荐。',
@@ -213,7 +213,7 @@ export const reportData: ReportSection[] = [
   <div class="flex h-screen bg-gray-100">
     <aside class="w-72 bg-slate-800 text-slate-100 p-6 space-y-2 overflow-y-auto shadow-lg">
       <h1 class="text-3xl font-bold mb-8 border-b border-slate-700 pb-3 text-indigo-400">
-        Copilot 演示
+        慧装易助演示
       </h1>
       <nav>
         <ul>
@@ -358,11 +358,11 @@ main::-webkit-scrollbar-thumb {
 
     <div v-if="isLoading" class="mt-6 text-center">
       <div class="inline-block animate-pulse-fast rounded-full bg-indigo-400 h-8 w-8"></div>
-      <p class="text-sm text-slate-500 mt-2">Copilot 正在分析...</p>
+      <p class="text-sm text-slate-500 mt-2">慧装易助正在分析...</p>
     </div>
 
     <div v-if="copilotResponse && !isLoading" class="mt-6 p-4 border border-green-300 bg-green-50 rounded-md">
-      <h4 class="text-md font-semibold text-green-800 mb-2">Copilot 分析与建议:</h4>
+      <h4 class="text-md font-semibold text-green-800 mb-2">慧装易助分析与建议:</h4>
       <div class="space-y-2 text-sm">
         <p><strong class="text-green-700">识别关键词:</strong> <span class="text-slate-600">{{ copilotResponse.keywords }}</span></p>
         <p><strong class="text-green-700">匹配知识/案例:</strong> <span class="text-slate-600">{{ copilotResponse.matchedCase }}</span></p>
@@ -470,7 +470,7 @@ const getCopilotSuggestion = async () => {
     </div>
 
     <div v-if="copilotFeedback.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
-      <h4 class="text-md font-semibold text-amber-800 mb-2">Copilot 实时反馈:</h4>
+      <h4 class="text-md font-semibold text-amber-800 mb-2">慧装易助实时反馈:</h4>
       <ul class="list-disc list-inside space-y-1 text-sm">
         <li v-for="(feedback, index) in copilotFeedback" :key="index" :class="getFeedbackClass(feedback.type)">
           <strong class="font-medium">{{ feedback.type.toUpperCase() }}:</strong> {{ feedback.message }}
@@ -568,7 +568,7 @@ const getFeedbackClass = (type: Feedback['type']): string => {
 3.  **`src/components/InteractiveQueryDemo.vue` (新增)**:
     * 包含一个文本区域让用户输入“客户问题”。
     * 一个“咨询 Copilot”按钮。
-    * 点击按钮后，模拟 Copilot 的分析过程（有加载状态），然后显示：
+    * 点击按钮后，模拟 慧装易助的分析过程（有加载状态），然后显示：
         * 识别到的关键词（模拟）。
         * 匹配到的知识/案例（从一个简单的模拟知识库中查找）。
         * 建议的回复（基于模拟知识库）。
@@ -577,7 +577,7 @@ const getFeedbackClass = (type: Feedback['type']): string => {
 4.  **`src/components/AgentAssistDemo.vue` (新增)**:
     * 包含一个文本区域让用户输入“客服回复草稿”。
     * 当用户输入时，实时（模拟）分析输入内容。
-    * 根据预设的一些简单规则（例如：是否包含问候语、是否使用了不当词汇、是否需要询问订单号等），在下方显示 Copilot 的反馈提示（如合规提醒、建议等）。
+    * 根据预设的一些简单规则（例如：是否包含问候语、是否使用了不当词汇、是否需要询问订单号等），在下方显示 慧装易助的反馈提示（如合规提醒、建议等）。
 
 5.  **样式调整 (`tailwind.config.js`, `src/style.css`, `App.vue` `<style scoped>`)**:
     * 为演示组件的容器添加了一些基本样式。
@@ -595,4 +595,4 @@ const getFeedbackClass = (type: Feedback['type']): string => {
 5.  运行 `npm install` (或 yarn/pnpm) 来确保所有依赖都已安装。
 6.  运行 `npm run dev` (或 yarn dev / pnpm dev) 来启动开发服务器。
 
-现在，您应该能看到一个更具交互性的概念演示页面了。用户可以在特定章节与模拟的 Copilot 功能进行
+现在，您应该能看到一个更具交互性的概念演示页面了。用户可以在特定章节与模拟的 慧装易助功能进行

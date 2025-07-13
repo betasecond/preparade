@@ -14,7 +14,7 @@
       ></textarea>
     </div>
 
-    <div v-if="copilotFeedback.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
+    <div v-if="assistResponse && assistResponse.suggestions && assistResponse.suggestions.length > 0" class="mt-4 p-3 border border-amber-300 bg-amber-50 rounded-md">
       <h4 class="text-md font-semibold text-amber-800 mb-2">AI 智能体客服实时反馈:</h4>
 
       <ul class="list-disc list-inside space-y-1 text-sm">
@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { AgentAssistServiceImpl, AssistRequest, type AssistResponse } from '../services/agentAssist.service';
+import { AgentAssistServiceImpl, type AssistRequest, type AssistResponse } from '../services/agentAssist.service';
 
 // 状态变量
 const agentDraft = ref('');
@@ -61,27 +61,27 @@ const assistService = new AgentAssistServiceImpl();
 const sessionContext = {
   sessionId: 'demo-session-' + Date.now(),
   agentId: 'agent-123',
-  history: [
+  dialogueHistory: [
     {
       id: 'msg-1',
-      sender: 'customer',
+      sender: 'customer' as const,
       content: '你们的产品什么时候能发货？我等了三天了还没收到',
       timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-      type: 'text'
+      type: 'text' as const,
     },
     {
       id: 'msg-2',
-      sender: 'agent',
+      sender: 'agent' as const,
       content: '您好，请问您的订单号是多少呢？我帮您查询',
       timestamp: new Date(Date.now() - 1000 * 60 * 3).toISOString(),
-      type: 'text'
+      type: 'text' as const,
     },
     {
       id: 'msg-3',
-      sender: 'customer',
+      sender: 'customer' as const,
       content: '订单号是1234567890',
       timestamp: new Date(Date.now() - 1000 * 60 * 2).toISOString(),
-      type: 'text'
+      type: 'text' as const,
     }
   ]
 };
@@ -111,11 +111,14 @@ const analyzeAgentInput = () => {
         context: {
           sessionId: sessionContext.sessionId,
           agentId: sessionContext.agentId,
-          history: sessionContext.history
+          dialogueHistory: sessionContext.dialogueHistory
         },
         currentDraft: agentDraft.value,
         assistType: 'auto'
       };
+
+      // 调试：打印即将发送的请求对象
+      console.log('即将发送的请求体:', JSON.stringify(request, null, 2));
 
       // 调用API
       const response = await assistService.getRealtimeAssistance(request);
