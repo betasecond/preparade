@@ -151,8 +151,8 @@ export const reportData: ReportSection[] = [
   },
   {
     id: 'interactive-query-demo-section',
-    title: '2. 演示：智能问答',
-    mainTitle: '2. 演示：慧装易助智能问答与建议',
+    title: '2. 功能：智能问答',
+    mainTitle: '2. 功能：慧装易助智能问答与建议',
     content: [
       { type: 'paragraph', text: '此演示模拟客户提出一个常见问题，慧装易助如何基于知识库和历史数据快速给出建议答案。' },
       { type: 'demo', demoComponent: 'InteractiveQueryDemo' },
@@ -170,8 +170,8 @@ export const reportData: ReportSection[] = [
   },
   {
     id: 'agent-assist-demo-section',
-    title: '3. 演示：客服辅助',
-    mainTitle: '3. 演示：慧装易助客服实时辅助',
+    title: '3. 功能：客服辅助',
+    mainTitle: '3. 功能：慧装易助客服实时辅助',
     content: [
       { type: 'paragraph', text: '此演示模拟客服代表在回复客户时，慧装易助如何提供实时的输入辅助和合规提醒。' },
       { type: 'demo', demoComponent: 'AgentAssistDemo' },
@@ -558,7 +558,7 @@ const getFeedbackClass = (type: Feedback['type']): string => {
 1.  **`src/reportData.ts`**:
     * 内容大幅简化，更侧重于引导用户查看交互式演示。
     * `ReportContentItem` 接口增加了 `demoComponent` 字段，用于指定要渲染的演示组件。
-    * 创建了新的章节专门用于嵌入演示组件，例如 "2. 演示：智能问答" 和 "3. 演示：客服辅助"。
+    * 创建了新的章节专门用于嵌入演示组件，例如 "2. 功能：智能问答" 和 "3. 功能：客服辅助"。
 
 2.  **`src/App.vue`**:
     * 导入了新的演示组件 `InteractiveQueryDemo.vue` 和 `AgentAssistDemo.vue`。
@@ -580,7 +580,7 @@ const getFeedbackClass = (type: Feedback['type']): string => {
     * 根据预设的一些简单规则（例如：是否包含问候语、是否使用了不当词汇、是否需要询问订单号等），在下方显示 慧装易助的反馈提示（如合规提醒、建议等）。
 
 5.  **样式调整 (`tailwind.config.js`, `src/style.css`, `App.vue` `<style scoped>`)**:
-    * 为演示组件的容器添加了一些基本样式。
+    * 为组件的容器添加了一些基本样式。
     * 优化了整体布局和滚动条样式，提升视觉效果。
     * 在 `tailwind.config.js` 中添加了一个简单的 `pulse-fast` 动画，用于加载状态。
 
@@ -595,4 +595,4 @@ const getFeedbackClass = (type: Feedback['type']): string => {
 5.  运行 `npm install` (或 yarn/pnpm) 来确保所有依赖都已安装。
 6.  运行 `npm run dev` (或 yarn dev / pnpm dev) 来启动开发服务器。
 
-现在，您应该能看到一个更具交互性的概念演示页面了。用户可以在特定章节与模拟的 慧装易助功能进行
+现在，您应该能看到一个更具交互性的概念平台了。用户可以在特定章节与模拟的 慧装易助功能进行互动，而不仅仅是阅读文本。
