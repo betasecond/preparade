@@ -1,9 +1,10 @@
 <template>
   <div class="p-4 bg-white rounded-lg ">
-    <h3 class="text-xl font-semibold mb-4 text-indigo-700">客户智能问答演示</h3>
+    <h3 class="text-xl font-semibold mb-4 text-indigo-700">客户智能问答</h3>
     
     <div class="mb-4">
-      <label for="customerQuery" class="block text-sm font-medium text-slate-700 mb-1">客户问题:</label>
+      <label for="customer-query" class="block text-sm font-medium text-gray-700 mb-1">客户问题:</label>
+      <div class="flex flex-col sm:flex-row gap-2">
       <textarea
         id="customerQuery"
         v-model="customerQuery"
@@ -39,6 +40,7 @@
      <div v-if="errorMessage && !isLoading" class="mt-6 p-3 border border-red-300 bg-red-50 rounded-md text-sm text-red-700">
       {{ errorMessage }}
     </div>
+  </div>
   </div>
 </template>
 

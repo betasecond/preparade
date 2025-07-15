@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 bg-white rounded-lg">
-    <h3 class="text-xl font-semibold mb-4 text-indigo-700">客服实时辅助演示</h3>
+  <div class="p-4 border rounded-lg shadow-sm bg-white">
+    <h3 class="text-xl font-semibold mb-4 text-indigo-700">客服实时辅助</h3>
 
     <div class="mb-4">
       <label for="agentResponse" class="block text-sm font-medium text-slate-700 mb-1">客服回复草稿:</label>

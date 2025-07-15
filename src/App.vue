@@ -98,7 +98,7 @@ const formatText = (text: string): string => {
         </div>
       </div>
       <div v-else class="text-center text-gray-500 mt-20">
-        <p class="text-2xl">请从左侧选择一个演示模块或章节。</p>
+        <p class="text-2xl">请从左侧选择一个功能模块或章节。</p>
       </div>
     </main>
   </div>
