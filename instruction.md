@@ -213,7 +213,7 @@ export const reportData: ReportSection[] = [
   <div class="flex h-screen bg-gray-100">
     <aside class="w-72 bg-slate-800 text-slate-100 p-6 space-y-2 overflow-y-auto shadow-lg">
       <h1 class="text-3xl font-bold mb-8 border-b border-slate-700 pb-3 text-indigo-400">
-        慧装易助演示
+        慧装易助
       </h1>
       <nav>
         <ul>
